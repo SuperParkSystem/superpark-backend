@@ -1,15 +1,13 @@
 import bcrypt from "bcrypt";
-import express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
-import * as driver from "../models/driver_model.ts";
-// import * as me from "../models/errors.ts"
+import * as parkingOwner from "../models/parkingOwner_model.ts";
 
 import { randomFillSync } from "crypto";
 
-const DriverSaltRounds = 10
+const ParkingOwnerSaltRounds = 10
 
-export async function createPut(req : express.Request, res : express.Response) {
+export async function createPut(req : Request, res : Response) {
   var email = req.body.email
   var password = req.body.password
   if (email == undefined || password === undefined) {
@@ -17,8 +15,8 @@ export async function createPut(req : express.Request, res : express.Response) {
     return
   }
   console.log("Extracted email and password")
-  let salted = await bcrypt.hash(password, DriverSaltRounds)
-  let result = await driver.create(email, salted)
+  let salted = await bcrypt.hash(password, ParkingOwnerSaltRounds)
+  let result = await parkingOwner.create(email, salted, undefined, undefined)
   if (result === null || result === undefined) {
       res.sendStatus(201) // TODO: check code
   } else {
@@ -27,17 +25,17 @@ export async function createPut(req : express.Request, res : express.Response) {
   }
 }
 
-export async function createTokenPost(req : express.Request, res : express.Response) {
+export async function createTokenPost(req : Request, res : Response) {
     var email = req.body.email
     var password = req.body.password
     if (email === undefined || password === undefined) {
         res.sendStatus(400)
         return
     }
-    const passHash = await driver.fetchPass(email)
+    const passHash = await parkingOwner.fetchPass(email)
     console.log("Passhash: ", passHash)
     try {
-        if (!await bcrypt.compare(password, passHash)) {
+        if (! await bcrypt.compare(password, passHash)) {
             res.sendStatus(401)
             return
         }
@@ -49,7 +47,7 @@ export async function createTokenPost(req : express.Request, res : express.Respo
     const buf = Buffer.alloc(64)
     randomFillSync(buf)
     const token = buf.toString('base64')
-    driver.createToken(email, token)
+    parkingOwner.createToken(email, token)
     res.status(201)
     res.send({token: token})
 }
