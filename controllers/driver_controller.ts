@@ -36,7 +36,13 @@ export async function createTokenPost(req : express.Request, res : express.Respo
     }
     const passHash = await driver.fetchPass(email)
     console.log("Passhash: ", passHash)
-    if (! await bcrypt.compare(password, passHash)) {
+    try {
+        if (!await bcrypt.compare(password, passHash)) {
+            res.sendStatus(401)
+            return
+        }
+    } catch (err:any) {
+        console.log(err)
         res.sendStatus(401)
         return
     }

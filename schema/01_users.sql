@@ -15,7 +15,7 @@ CREATE TABLE parking_owners (
     email varchar(255) PRIMARY KEY,
     password_hash varchar(255),
     lat float,
-    lont float
+    long float
 );
 
 CREATE TABLE parking_owners_sessions (

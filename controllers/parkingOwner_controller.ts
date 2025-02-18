@@ -34,7 +34,13 @@ export async function createTokenPost(req : Request, res : Response) {
     }
     const passHash = await parkingOwner.fetchPass(email)
     console.log("Passhash: ", passHash)
-    if (! await bcrypt.compare(password, passHash)) {
+    try {
+        if (! await bcrypt.compare(password, passHash)) {
+            res.sendStatus(401)
+            return
+        }
+    } catch (err:any) {
+        console.log(err)
         res.sendStatus(401)
         return
     }
