@@ -38,3 +38,16 @@ export async function fetchPass(email: string) {
 export async function createToken(email: string, token: string) {
     pool.query("INSERT INTO driver_sessions (email, session_key) VALUES ($1, $2);", [email, token])
 }
+
+export async function verifyToken(token: string) {
+    try {
+        var result = await pool.query("SELECT email FROM driver_sessions WHERE session_key = $1;", [token])
+        if (result.rowCount == null || result.rowCount == 0) {
+            return {type: me.NotExistError}
+        }
+        console.log("Fetched email for token: ", result.rows[0].email)
+        return result.rows[0].email
+    } catch (err: any) {
+        return {type: me.UnknownError}
+    }
+}
