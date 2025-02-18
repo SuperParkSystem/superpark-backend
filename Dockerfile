@@ -1,8 +1,8 @@
 FROM oven/bun
 
+WORKDIR /app
+
 COPY . .
-CMD rm -rfd node_modules
-COPY *.ts .
 
 RUN bun install
 

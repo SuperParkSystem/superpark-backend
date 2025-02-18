@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import express from "express";
+import { Request, Response } from "express";
 
 import * as driver from "../models/driver_model.ts";
 // import * as me from "../models/errors.ts"
@@ -45,4 +46,10 @@ export async function createTokenPost(req : express.Request, res : express.Respo
     driver.createToken(email, token)
     res.status(201)
     res.send({token: token})
+}
+
+export async function testToken(req: Request, res: Response) {
+    var email : string | undefined | string[] = req.headers['x-email']
+    res.status(200)
+    res.send({msg: "Token verified", email: email})
 }
