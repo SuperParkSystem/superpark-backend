@@ -51,3 +51,24 @@ export async function verifyToken(token: string) {
         return {type: me.UnknownError}
     }
 }
+
+export async function startSession(driverEmail: string, parkingOwnerEmail: string) {
+    const conn = await pool.connect()
+    try {
+        await conn.query("BEGIN")
+        var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time = NULL AND driver_email = $1;", [driverEmail])
+        if (otherSessions.rowCount != null && otherSessions.rowCount> 0) {
+            conn.query("COMMIT")
+            return {type: me.DuplError, parkingOwnerEmail: otherSessions.rows[0].parking_owner_email, startTime: otherSessions.rows[0].start_time}
+        }
+        await conn.query("INSERT INTO sessions(driver_email, parking_owner_email, start_time) VALUES ($1, $2, NOW());",
+                         [driverEmail, parkingOwnerEmail]
+                        )
+        conn.query("COMMIT")
+    } catch (err) {
+        console.log(err)
+        return {type: me.UnknownError}
+    }finally {
+        conn.release()
+    }
+}
