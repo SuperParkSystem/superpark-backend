@@ -3,9 +3,9 @@ import pool from "./connectionPool"
 import * as me from "./errors"
 
 export async function create(email: string, password: string, 
-                             lat: number | undefined, long: number | undefined) {
+                             lat: number | undefined, lon: number | undefined) {
     try {
-        await pool.query("INSERT INTO parking_owners (email, password_hash, lat, long) VALUES ($1, $2, $3, $4);", [email, password, lat || null, long || null])
+        await pool.query("INSERT INTO parking_owners (email, password_hash, lat, lon) VALUES ($1, $2, $3, $4);", [email, password, lat || null, lon || null])
     } catch (err: any) {
         if (err instanceof DatabaseError) {
             if (err.code == "23505") {

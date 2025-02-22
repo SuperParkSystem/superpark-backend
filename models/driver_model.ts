@@ -58,14 +58,17 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
         await conn.query("BEGIN")
         var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time = NULL AND driver_email = $1;", [driverEmail])
         if (otherSessions.rowCount != null && otherSessions.rowCount> 0) {
-            conn.query("COMMIT")
-            return {type: me.DuplError, parkingOwnerEmail: otherSessions.rows[0].parking_owner_email, startTime: otherSessions.rows[0].start_time}
+            var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [otherSessions.rows[0].parking_owner_email])
+            return {type: me.DuplError, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: otherSessions.rows[0].start_time}
         }
         await conn.query("INSERT INTO sessions(driver_email, parking_owner_email, start_time) VALUES ($1, $2, NOW());",
                          [driverEmail, parkingOwnerEmail]
                         )
-        conn.query("COMMIT")
+        var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [parkingOwnerEmail])
+        await conn.query("COMMIT")
+        return {type: me.NoError, lat: po.rows[0].lat, lon: po.rows[0].lon}
     } catch (err) {
+        conn.query('ROLLBACK')
         console.log(err)
         return {type: me.UnknownError}
     }finally {
