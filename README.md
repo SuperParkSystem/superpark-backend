@@ -30,6 +30,16 @@ This will bring up the PostgresQL server for testing.
 Refer each directory for information on what it contains. Overall project structure
 has been determined based on [this blog](https://medium.com/@bthncm/building-scalable-and-maintainable-apis-with-node-js-and-express-js-9621c89b).
 
+## Documentation
+
+Run the following command to run a developmental version:
+
+```bash
+bun run dev
+```
+
+Now open `localhost:8080/docs` in your browser to view the documentation.
+
 ## Contributing
 
 Do **NOT** push to the `main` branch. Create a separate branch for whatever issue you are
