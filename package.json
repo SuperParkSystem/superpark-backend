@@ -19,7 +19,9 @@
     "express": "^4.21.2",
     "pg": "^8.13.3",
     "pg-error": "^1.1.0",
-    "pg-pool": "^3.7.1"
+    "pg-pool": "^3.7.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "scripts": {
     "dev": "bun --env-file=.dev_env server.ts"
