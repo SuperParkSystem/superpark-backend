@@ -3,7 +3,7 @@ import express from "express";
 import { Request, Response } from "express";
 
 import * as driver from "../models/driver_model.ts";
-// import * as me from "../models/errors.ts"
+import * as me from "../models/errors.ts"
 
 import { randomFillSync } from "crypto";
 
@@ -58,4 +58,51 @@ export async function testToken(req: Request, res: Response) {
     var email : string | undefined | string[] = req.headers['x-email']
     res.status(200)
     res.send({msg: "Token verified", email: email})
+}
+
+export async function startSessionPut(req: Request, res: Response) {
+    var email : string | undefined | string[] = req.headers['x-email']
+    var parkingOwner : string | undefined = req.query.parkingOwnerEmail?.toString()
+    if (typeof email != 'string') {
+        res.sendStatus(501)
+        return
+    }
+    if (parkingOwner === undefined) {
+        res.sendStatus(400)
+        return
+    }
+    var result = await driver.startSession(email, parkingOwner)
+    if (result.type == me.UnknownError) {
+        res.sendStatus(501)
+        return
+    } else if (result.type === me.DuplError) {
+        res.status(400)
+        res.send({msg: "Session exists", })
+        return
+    }
+    res.status(201)
+    res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, starTime: result.startTime})
+    return 
+}
+
+export async function stopSessionPut(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    var parkingOwner = req.query.parkingOwnerEmail
+    var sessionID = req.body.sessionID
+    if (parkingOwner === undefined || sessionID === undefined || email === undefined) {
+        res.sendStatus(400)
+        return
+    }
+    var result = await driver.stopSession(sessionID, email, parkingOwner.toString())
+    if (result.type === me.NoError) {
+        res.status(200)
+        var duration : number|undefined = result.duration
+        if (duration === undefined) {
+            res.sendStatus(500)
+            return
+        }
+        res.send({duration: duration/1000})
+    } else {
+        res.sendStatus(400)
+    }
 }
