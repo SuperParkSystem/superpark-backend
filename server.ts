@@ -1,4 +1,5 @@
 import express from "express"
+import cors from "cors"
 
 const swaggerJSDoc = require('swagger-jsdoc')
 const swaggerUI = require("swagger-ui-express")
@@ -30,6 +31,8 @@ const port = process.env.PORT || '80'
 console.log("Listening on port " + port)
 
 var app = express()
+
+app.use(cors)
 
 app.use("/", express.json())
 app.use("/auth", auth_router)
