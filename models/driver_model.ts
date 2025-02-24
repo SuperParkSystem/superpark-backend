@@ -75,3 +75,11 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
         conn.release()
     }
 }
+
+export async function stopSession(driverEmail: string) {
+    const conn = await pool.connect()
+    try {
+        await conn.query("BEGIN")
+    } finally {
+    }
+}

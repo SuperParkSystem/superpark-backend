@@ -62,7 +62,7 @@ export async function testToken(req: Request, res: Response) {
 
 export async function startSessionPut(req: Request, res: Response) {
     var email : string | undefined | string[] = req.headers['x-email']
-    var parkingOwner : string | undefined = req.body.parkingOwnerEmail
+    var parkingOwner : string | undefined = req.query.parkingOwnerEmail?.toString()
     if (typeof email != 'string') {
         res.sendStatus(501)
         return
@@ -78,5 +78,9 @@ export async function startSessionPut(req: Request, res: Response) {
     } else if (result.type === me.DuplError) {
         res.status(400)
         res.send({msg: "Session exists", })
+        return
     }
+    res.status(201)
+    res.send({lat: result.lat, lon: result.lon})
+    return 
 }
