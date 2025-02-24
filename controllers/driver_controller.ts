@@ -81,6 +81,28 @@ export async function startSessionPut(req: Request, res: Response) {
         return
     }
     res.status(201)
-    res.send({lat: result.lat, lon: result.lon})
+    res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, starTime: result.startTime})
     return 
+}
+
+export async function stopSessionPut(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    var parkingOwner = req.query.parkingOwnerEmail
+    var sessionID = req.body.sessionID
+    if (parkingOwner === undefined || sessionID === undefined || email === undefined) {
+        res.sendStatus(400)
+        return
+    }
+    var result = await driver.stopSession(sessionID, email, parkingOwner.toString())
+    if (result.type === me.NoError) {
+        res.status(200)
+        var duration : number|undefined = result.duration
+        if (duration === undefined) {
+            res.sendStatus(500)
+            return
+        }
+        res.send({duration: duration/1000})
+    } else {
+        res.sendStatus(400)
+    }
 }

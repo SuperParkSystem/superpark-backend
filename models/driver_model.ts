@@ -2,6 +2,8 @@ import { DatabaseError } from "pg"
 import pool from "./connectionPool"
 import * as me from "./errors"
 
+import { randomUUID } from "crypto"
+
 export async function create(email: string, password: string) {
     try {
         await pool.query("INSERT INTO drivers (email, password_hash) VALUES ($1, $2);", [email, password])
@@ -58,15 +60,16 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
         await conn.query("BEGIN")
         var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time = NULL AND driver_email = $1;", [driverEmail])
         if (otherSessions.rowCount != null && otherSessions.rowCount> 0) {
-            var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [otherSessions.rows[0].parking_owner_email])
-            return {type: me.DuplError, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: otherSessions.rows[0].start_time}
+            var po = await conn.query("SELECT session_id, lat, lon FROM parking_owners WHERE email = $1;", [otherSessions.rows[0].parking_owner_email])
+            return {type: me.DuplError, sessionID: po.rows[0].session_id, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: otherSessions.rows[0].start_time}
         }
-        await conn.query("INSERT INTO sessions(driver_email, parking_owner_email, start_time) VALUES ($1, $2, NOW());",
-                         [driverEmail, parkingOwnerEmail]
+        var uuid = randomUUID().toString()
+        await conn.query("INSERT INTO sessions(session_id, driver_email, parking_owner_email, start_time) VALUES ($1, $2, $3, NOW());",
+                         [uuid, driverEmail, parkingOwnerEmail]
                         )
         var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [parkingOwnerEmail])
         await conn.query("COMMIT")
-        return {type: me.NoError, lat: po.rows[0].lat, lon: po.rows[0].lon}
+        return {type: me.NoError, sessionID: uuid, lat: po.rows[0].lat, lon: po.rows[0].lon}
     } catch (err) {
         conn.query('ROLLBACK')
         console.log(err)
@@ -76,10 +79,24 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
     }
 }
 
-export async function stopSession(driverEmail: string) {
-    const conn = await pool.connect()
+export async function stopSession(sessionID: string, driverEmail: string, parkingOwnerEmail: string) {
     try {
-        await conn.query("BEGIN")
-    } finally {
+        var res = await pool.query(
+            "UPDATE sessions SET end_time=NOW() WHERE driver_email=$1 AND session_id=$2 AND parking_owner_email=$3",
+            [driverEmail, sessionID, parkingOwnerEmail]
+        )
+        console.log("Ended session")
+        if (res.rowCount == 0) {
+            console.log("Session does not exist", sessionID, driverEmail, parkingOwnerEmail)
+            return {type: me.NotExistError}
+        }
+        res = await pool.query(
+            "SELECT start_time, end_time, parking_owner_email FROM sessions WHERE session_id=$1;", [sessionID]
+        )
+        console.log("Got final results")
+        return {type: me.NoError, duration: res.rows[0].end_time-res.rows[0].start_time}
+    } catch(err) {
+        console.log(err)
+        return {type: me.UnknownError}
     }
 }

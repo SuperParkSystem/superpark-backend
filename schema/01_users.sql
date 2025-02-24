@@ -12,6 +12,7 @@ CREATE TABLE driver_sessions (
 );
 
 CREATE TABLE sessions (
+    session_id varchar(255) PRIMARY KEY,
     driver_email varchar(255),
     parking_owner_email varchar(255),
     start_time timestamp with time zone,
