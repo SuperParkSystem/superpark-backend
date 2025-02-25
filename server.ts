@@ -4,9 +4,6 @@ import cors from "cors"
 const swaggerJSDoc = require('swagger-jsdoc')
 const swaggerUI = require("swagger-ui-express")
 
-const swaggerJSDoc = require('swagger-jsdoc')
-const swaggerUI = require("swagger-ui-express")
-
 import auth_router from "./routes/auth_routes"
 import driver_router from "./routes/driver_routes"
 import { driverAuth } from "./middleware/auth_middleware"
@@ -19,26 +16,7 @@ const swoptions = {
             version: '0.1.0'
         }
     },
-    apis: ['./routes/auth_routes.ts', './routes/driver_routes.ts'],
-    securityDefinitions: {
-        DriverAuth: {
-            type: 'http',
-            scheme: 'bearer'
-        }
-    },
-}
-
-const openapiSpecification = await swaggerJSDoc(swoptions)
-
-const swoptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'SuperPark API',
-            version: '0.1.0'
-        }
-    },
-    apis: ['./routes/auth_routes.ts']
+    apis: ['./routes/auth_routes.ts', './routes/driver_routes.ts']
 }
 
 const openapiSpecification = await swaggerJSDoc(swoptions)
@@ -48,7 +26,7 @@ console.log("Listening on port " + port)
 
 var app = express()
 
-app.use(cors)
+app.use("/", cors())
 
 app.use("/", express.json())
 app.use("/auth", auth_router)
