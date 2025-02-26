@@ -39,4 +39,3 @@ app.use("/docs", swaggerUI.serve, swaggerUI.setup(openapiSpecification))
 console.log(app._router.stack)
 
 app.listen(port)
-
