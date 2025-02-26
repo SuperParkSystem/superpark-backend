@@ -52,3 +52,28 @@ export async function verifyToken(token: string) {
         return {type: me.UnknownError}
     }
 }
+
+export async function verifyPaymentStatus(sessionID: string) {
+    try {
+        console.log(sessionID)
+        var result = await pool.query("SELECT payment_status FROM sessions WHERE session_id = $1;", [sessionID])
+        console.log(result.rows)
+        if (result.rows.length == 0) {
+            return {type: me.NotExistError}
+        }
+        var verified = (result.rows[0].payment_status == 1)
+        return {type: me.NoError, verified: verified}
+    } catch (err: any) {
+        console.log(err)
+        return {type: me.UnknownError}
+    }
+}
+
+export async function getBalance(driverEmail: string) {
+    const res = await pool.query("SELECT balance FROM parking_owners WHERE email = $1;", [driverEmail])
+    if (res.rows.length > 0) {
+    return {type: me.NoError, balance: res.rows[0].balance}
+    } else {
+        return {type: me.UnknownError}
+    }
+}

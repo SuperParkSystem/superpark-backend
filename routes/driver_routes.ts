@@ -6,125 +6,140 @@ import * as auth from "../middleware/auth_middleware"
 
 const router = express.Router()
 
+router.put('/session/start', driver.startSessionPut)
+
+router.put('/session/stop', driver.stopSessionPut)
+
+router.post('/session/pay', driver.paySessionPost)
+
+router.get('/balance', driver.getBalanceGet)
+
+export default router;
+
 /**
  * @openapi
- * /driver/startSession:
+ * "/driver/session/start":
  *   put:
  *     summary: Start a parking session
- *     description: Starts a new parking session for the driver. The request must include an authentication Bearer token.
+ *     description: Starts a new parking session for the driver. The request must include
+ *       an authentication Bearer token.
  *     tags:
- *       - Session
+ *     - Session
  *     security:
- *       - bearerAuth: []
+ *     - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: parkingOwnerEmail
- *         required: true
- *         schema:
- *           type: string
- *         description: The email of the parking owner.
+ *     - in: query
+ *       name: parkingOwnerEmail
+ *       required: true
+ *       schema:
+ *         type: string
+ *       description: The email of the parking owner.
  *     responses:
- *       201:
+ *       '201':
  *         description: Successfully created a new session.
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 sessionID:
- *                   type: string
- *                   description: The ID of the created session.
- *                 lat:
- *                   type: number
- *                   format: float
- *                   description: Latitude of the session start location.
- *                 lon:
- *                   type: number
- *                   format: float
- *                   description: Longitude of the session start location.
- *                 startTime:
- *                   type: string
- *                   format: date-time
- *                   description: The timestamp when the session started.
  *             example:
- *               sessionID: "abc123"
+ *               sessionID: abc123
  *               lat: 37.7749
  *               lon: -122.4194
- *               startTime: "2025-02-24T12:34:56Z"
- *       400:
+ *               startTime: '2025-02-24T12:34:56Z'
+ *       '400':
  *         description: Bad request (e.g., missing parameters or session already exists).
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 msg:
- *                   type: string
- *                   example: "Session exists"
- *       401:
- *         description: Unauthorized request (invalid or missing Bearer token).
- *       501:
- *         description: Internal server error or unknown error.
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: SessionToken
- */
-router.put('/startSession', driver.startSessionPut)
-
-
-
-/**
- * @openapi
- * /driver/stopSession:
+ *             example:
+ *               msg: Session exists
+ *       '401':
+ *         description: Unauthorized request.
+ *       '501':
+ *         description: Internal server error.
+ * "/driver/session/stop":
  *   put:
  *     summary: Stop a parking session
- *     description: Stops an active parking session for the driver. The request must include an authentication Bearer token.
+ *     description: Stops an active parking session for the driver. The request must
+ *       include an authentication Bearer token.
  *     tags:
- *       - Session
+ *     - Session
  *     security:
- *       - bearerAuth: []
+ *     - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: parkingOwnerEmail
- *         required: true
- *         schema:
- *           type: string
- *         description: The email of the parking owner.
+ *     - in: query
+ *       name: parkingOwnerEmail
+ *       required: true
+ *       schema:
+ *         type: string
+ *       description: The email of the parking owner.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               sessionID:
- *                 type: string
- *                 description: The ID of the session to stop.
  *           example:
- *             sessionID: "abc123"
+ *             sessionID: abc123
  *     responses:
- *       200:
+ *       '200':
  *         description: Successfully stopped the session.
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 duration:
- *                   type: number
- *                   description: The duration of the session in seconds.
  *             example:
  *               duration: 3600
- *       400:
- *         description: Bad request (e.g., missing parameters).
- *       401:
- *         description: Unauthorized request (invalid or missing Bearer token).
- *       404:
+ *       '400':
+ *         description: Bad request.
+ *       '401':
+ *         description: Unauthorized request.
+ *       '404':
  *         description: Session not found or already stopped.
- *       500:
+ *       '500':
+ *         description: Internal server error.
+ * "/driver/session/pay":
+ *   post:
+ *     summary: Pay for a parking session
+ *     description: Processes the payment for an active parking session.
+ *     tags:
+ *     - Payment
+ *     security:
+ *     - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             sessionID: abc123
+ *     responses:
+ *       '200':
+ *         description: Payment successful.
+ *         content:
+ *           application/json:
+ *             example:
+ *               amount: 123.45
+ *       '400':
+ *         description: Bad request (e.g., missing parameters or insufficient funds).
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: Insufficient funds.
+ *       '401':
+ *         description: Unauthorized request.
+ *       '500':
+ *         description: Internal server error.
+ * "/driver/balance":
+ *   get:
+ *     summary: Get account balance
+ *     description: Retrieves the current balance of the driver.
+ *     tags:
+ *     - Balance
+ *     security:
+ *     - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Successfully retrieved balance.
+ *         content:
+ *           application/json:
+ *             example:
+ *               balance: 20.5
+ *       '401':
+ *         description: Unauthorized request.
+ *       '500':
  *         description: Internal server error.
  * components:
  *   securitySchemes:
@@ -133,6 +148,3 @@ router.put('/startSession', driver.startSessionPut)
  *       scheme: bearer
  *       bearerFormat: SessionToken
  */
-router.put('/stopSession', driver.stopSessionPut)
-
-export default router;

@@ -1,25 +1,25 @@
 import express from "express"
 import cors from "cors"
 
-const swaggerJSDoc = require('swagger-jsdoc')
-const swaggerUI = require("swagger-ui-express")
-
-import auth_router from "./routes/auth_routes"
-import driver_router from "./routes/driver_routes"
-import { driverAuth } from "./middleware/auth_middleware"
-
-const swoptions = {
+const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'SuperPark API',
-            version: '0.1.0'
+            title: 'SuperPark Backend API',
+            version: '0.1.0',
         }
     },
-    apis: ['./routes/auth_routes.ts', './routes/driver_routes.ts']
+    apis: ['./routes/driver_routes.ts', './routes/auth_routes.ts', './routes/parkingOwner_routes.ts']
 }
 
-const openapiSpecification = await swaggerJSDoc(swoptions)
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = swaggerJSDoc(options);
+
+import auth_router from "./routes/auth_routes"
+import driver_router from "./routes/driver_routes"
+import { driverAuth, parkingOwnerAuth } from "./middleware/auth_middleware"
+import parkingOwner_router from "./routes/parkingOwner_routes"
 
 const port = process.env.PORT || '80'
 console.log("Listening on port " + port)
@@ -34,9 +34,11 @@ app.use("/auth", auth_router)
 app.use('/driver', driverAuth)
 app.use('/driver', driver_router)
 
-app.use("/docs", swaggerUI.serve, swaggerUI.setup(openapiSpecification))
+app.use('/parkingOwner', parkingOwnerAuth)
+app.use('/parkingOwner', parkingOwner_router)
 
-console.log(app._router.stack)
+app.use('/raw-docs', express.static('./docs'))
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.listen(port)
-

@@ -38,7 +38,7 @@ Run the following command to run a developmental version:
 bun run dev
 ```
 
-Now open `localhost:8080/docs` in your browser to view the documentation.
+Now open `localhost:8080/docs/` in your browser to view the documentation.
 
 ## Contributing
 

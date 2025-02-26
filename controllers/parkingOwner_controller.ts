@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import * as parkingOwner from "../models/parkingOwner_model.ts";
 
 import { randomFillSync } from "crypto";
+import * as me from "../models/errors.ts"
 
 const ParkingOwnerSaltRounds = 10
 
@@ -56,4 +57,38 @@ export async function testToken(req: Request, res: Response) {
     var email : string | undefined | string[] = req.headers['x-email']
     res.status(200)
     res.send({msg: "Token verified", email: email})
+}
+
+export async function verifyPaymentGet(req: Request, res: Response) {
+    console.log(req.params)
+    const sessionID : string | undefined = req.query.sessionID?.toString()
+    if (sessionID === undefined) {
+        res.status(400)
+        res.send({msg: 'Missing sessionID'})
+    }
+    const result = await parkingOwner.verifyPaymentStatus(sessionID)
+    if (result.type != me.NoError) {
+         if (result.type == me.NotExistError) {
+            res.status(404)
+            res.send({msg: 'Session does not exist'})
+            return
+        } else {
+            res.sendStatus(500)
+            return
+        }
+    }
+    res.status(200)
+    res.send({verified: result.verified})
+}
+
+export async function getBalanceGet(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.sendStatus(500)
+        return
+    }
+    const result = await parkingOwner.getBalance(email)
+    res.status(200)
+    res.send({balance: result.balance})
+    return
 }
