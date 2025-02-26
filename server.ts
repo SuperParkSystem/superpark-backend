@@ -6,7 +6,8 @@ const swaggerUI = require("swagger-ui-express")
 
 import auth_router from "./routes/auth_routes"
 import driver_router from "./routes/driver_routes"
-import { driverAuth } from "./middleware/auth_middleware"
+import { driverAuth, parkingOwnerAuth } from "./middleware/auth_middleware"
+import parkingOwner_router from "./routes/parkingOwner_routes"
 
 const swoptions = {
     definition: {
@@ -33,6 +34,9 @@ app.use("/auth", auth_router)
 
 app.use('/driver', driverAuth)
 app.use('/driver', driver_router)
+
+app.use('/parkingOwner', parkingOwnerAuth)
+app.use('/parkingOwner', parkingOwner_router)
 
 app.use("/docs", swaggerUI.serve, swaggerUI.setup(openapiSpecification))
 

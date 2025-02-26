@@ -4,6 +4,10 @@ import * as me from "./errors"
 
 import { randomUUID } from "crypto"
 
+function calcAmt(duration) {
+    return duration/(60*1000*10)
+}
+
 export async function create(email: string, password: string) {
     try {
         await pool.query("INSERT INTO drivers (email, password_hash) VALUES ($1, $2);", [email, password])
@@ -94,9 +98,58 @@ export async function stopSession(sessionID: string, driverEmail: string, parkin
             "SELECT start_time, end_time, parking_owner_email FROM sessions WHERE session_id=$1;", [sessionID]
         )
         console.log("Got final results")
-        return {type: me.NoError, duration: res.rows[0].end_time-res.rows[0].start_time}
+        const duration = res.rows[0].end_time - res.rows[0].start_time
+        return {type: me.NoError, duration: duration/1000, amount: calcAmt(duration)}
     } catch(err) {
         console.log(err)
+        return {type: me.UnknownError}
+    }
+}
+
+export async function paySession(sessionID: string, driverEmail: string) {
+    const conn = await pool.connect()
+    try {
+        await conn.query("BEGIN")
+        var res = await conn.query('SELECT end_time, start_time, parking_owner_email FROM sessions \
+                                  WHERE session_id = $1 AND driver_email = $2;',
+                                  [sessionID, driverEmail])
+
+        if (res.rows.length == 0) {
+            await conn.query('ROLLBACK')
+            return {type: me.UnknownError}
+        }
+        const po = res.rows[0].parking_owner_email
+        const amt = calcAmt(res.rows[0].end_time - res.rows[0].start_time)
+        // TODO: variable rate, currently 1 every 10 minutes
+
+        var res = await conn.query('UPDATE sessions SET payment_status = 1 WHERE \
+                                   session_id = $1 AND payment_status = 0;',
+                                   [sessionID])
+        if (res.rowCount == null || res.rowCount == 0) {
+            await conn.query('COMMIT')
+            return {type: me.NoError, amount: amt}
+        }
+        var res = await conn.query('UPDATE drivers SET balance = balance - $1 WHERE \
+                                   email = $2;',
+                                   [amt, driverEmail])
+        await conn.query('UPDATE parking_owners SET balance = balance + $1 WHERE \
+                         email = $2;',
+                        [amt, po])
+        await conn.query('COMMIT')
+        return {type: me.NoError, amount: amt}
+    } catch (err: any) {
+        await conn.query('ROLLBACK')
+        return {type: me.UnknownError}
+    } finally {
+        conn.release()
+    }
+}
+
+export async function getBalance(driverEmail: string) {
+    const res = await pool.query("SELECT balance FROM drivers WHERE email = $1;", [driverEmail])
+    if (res.rows.length > 0) {
+    return {type: me.NoError, balance: res.rows[0].balance}
+    } else {
         return {type: me.UnknownError}
     }
 }

@@ -3,17 +3,17 @@
 CREATE TABLE drivers (
     email varchar(255) PRIMARY KEY,
     password_hash varchar(255) NOT NULL,
-    balance numeric(10, 2) NOT NULL DEFAULT 100
+    balance numeric(10, 2) NOT NULL DEFAULT 100,
+    CONSTRAINT drivers_balance CHECK (balance >= 0)
 );
+
 
 CREATE TABLE parking_owners (
     email varchar(255) PRIMARY KEY,
-    password_hash varchar(255) NOT NULL,
-    lat float,
+    password_hash varchar(255) NOT NULL, lat float,
     lon float,
     balance numeric(10, 2) NOT NULL DEFAULT 0
 );
-
 
 CREATE TABLE driver_sessions (
     email varchar(255) NOT NULL,
@@ -41,4 +41,10 @@ CREATE TABLE parking_owners_sessions (
 CREATE TABLE product_owners (
     email varchar(255) PRIMARY KEY,
     password_hash varchar(255) NOT NULL
+);
+
+CREATE TABLE product_owner_sessions (
+    email varchar(255) NOT NULL,
+    session_key varchar(255) PRIMARY KEY,
+    FOREIGN KEY (email) REFERENCES product_owners(email)
 );

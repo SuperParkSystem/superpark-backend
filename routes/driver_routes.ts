@@ -72,7 +72,7 @@ const router = express.Router()
  *       scheme: bearer
  *       bearerFormat: SessionToken
  */
-router.put('/startSession', driver.startSessionPut)
+router.put('/session/start', driver.startSessionPut)
 
 
 
@@ -133,6 +133,10 @@ router.put('/startSession', driver.startSessionPut)
  *       scheme: bearer
  *       bearerFormat: SessionToken
  */
-router.put('/stopSession', driver.stopSessionPut)
+router.put('/session/stop', driver.stopSessionPut)
+
+router.post('/session/pay', driver.paySessionPost)
+
+router.get('/balance', driver.getBalanceGet)
 
 export default router;

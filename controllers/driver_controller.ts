@@ -101,8 +101,46 @@ export async function stopSessionPut(req: Request, res: Response) {
             res.sendStatus(500)
             return
         }
-        res.send({duration: duration/1000})
+        res.send({duration: duration})
     } else {
         res.sendStatus(400)
     }
+}
+
+export async function paySessionPost(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (req.body === undefined) {
+        res.status(400)
+        res.send({msg: 'Missing request body'})
+        return
+    }
+    var sessionID = req.body.sessionID.toString()
+    if (email === undefined) {
+        res.sendStatus(500)
+        return
+    } else if (sessionID === undefined) {
+        res.sendStatus(400)
+        return
+    }
+    const result = await driver.paySession(sessionID, email)
+    if (result.type === me.NoError) {
+        res.status(200)
+        res.send({amount: result.amount})
+        return
+    } else {
+        res.sendStatus(500)
+        return
+    }
+}
+
+export async function getBalanceGet(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.sendStatus(500)
+        return
+    }
+    const result = await driver.getBalance(email)
+    res.status(200)
+    res.send({balance: result.balance})
+    return
 }
