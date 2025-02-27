@@ -9,8 +9,7 @@ function calcAmt(duration) {
 }
 
 export async function create(email: string, password: string) {
-    try {
-        await pool.query("INSERT INTO drivers (email, password_hash) VALUES ($1, $2);", [email, password])
+    try { await pool.query("INSERT INTO drivers (email, password_hash) VALUES ($1, $2);", [email, password])
     } catch (err: any) {
         if (err instanceof DatabaseError) {
             if (err.code == "23505") {
@@ -150,6 +149,19 @@ export async function getBalance(driverEmail: string) {
     if (res.rows.length > 0) {
     return {type: me.NoError, balance: res.rows[0].balance}
     } else {
-        return {type: me.UnknownError}
+        return {type: me.NotExistError}
+    }
+}
+
+export async function getActiveSession(email: string) {
+    const res = await pool.query("SELECT session_id, start_time, lat, lon FROM sessions s, parking_owners po\
+                                 WHERE po.email = s.parking_owner_email AND driver_email = $1 AND end_time IS NULL;",
+                                 [email])
+    if (res.rows.length > 0) {
+        return {type: me.NoError, startTime: res.rows[0].start_time, 
+            sessionID: res.rows[0].session_id,
+            duration: (Date.now() - res.rows[0].start_time)/1000}
+    } else {
+        return {type: me.NotExistError}
     }
 }

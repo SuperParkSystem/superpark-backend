@@ -144,3 +144,24 @@ export async function getBalanceGet(req: Request, res: Response) {
     res.send({balance: result.balance})
     return
 }
+
+export async function getSessions(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.status(500)
+        res.send({msg: 'Missing \"x-email\" header from middleware'})
+        return
+    }
+    const result = await driver.getActiveSession(email)
+    if (result.type == me.NoError) {
+        res.status(200)
+        res.send({duration: result.duration, sessionID: result.sessionID, startTime: result.startTime})
+    } else if (result.type == me.NotExistError) {
+        res.status(404)
+        res.send({msg: "No active sessions"})
+    } else {
+        res.status(500)
+        console.log(result)
+        res.send({msg: 'Unknown error'})
+    }
+}

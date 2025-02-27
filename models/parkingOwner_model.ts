@@ -69,11 +69,20 @@ export async function verifyPaymentStatus(sessionID: string) {
     }
 }
 
-export async function getBalance(driverEmail: string) {
-    const res = await pool.query("SELECT balance FROM parking_owners WHERE email = $1;", [driverEmail])
+export async function getBalance(email: string) {
+    const res = await pool.query("SELECT balance FROM parking_owners WHERE email = $1;", [email])
     if (res.rows.length > 0) {
     return {type: me.NoError, balance: res.rows[0].balance}
     } else {
         return {type: me.UnknownError}
+    }
+}
+
+export async function getPaymentPolicy(email: string) {
+    const res = await pool.query("SELECT payment_policy FROM parking_owners WHERE email = $1;", [email])
+    if (res.rowCount == 0) {
+        return {type:me.NotExistError}
+    } else {
+        return {type: me.NoError, policy: res.rows[0].payment_policy}
     }
 }

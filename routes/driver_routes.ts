@@ -14,6 +14,8 @@ router.post('/session/pay', driver.paySessionPost)
 
 router.get('/balance', driver.getBalanceGet)
 
+router.get('/session', driver.getSessions)
+
 export default router;
 
 /**
@@ -141,6 +143,37 @@ export default router;
  *         description: Unauthorized request.
  *       '500':
  *         description: Internal server error.
+ * "/driver/session":
+ *   get:
+ *     summary: Get active session details
+ *     description: Retrieves the active session details for a driver based on the provided email header.
+ *     tags:
+ *     - Session
+ *     security:
+ *     - bearerAuth: []
+ *     responses:
+ *       "200":
+ *         description: Active session found.
+ *         content:
+ *           application/json:
+ *             example:
+ *               duration: 120
+ *               sessionID: "abc123xyz"
+ *               startTime: "2025-02-27T12:00:00Z"
+ *               lat: 12.9716
+ *               lon: 77.5946
+ *       "404":
+ *         description: No active sessions found.
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "No active sessions"
+ *       "500":
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "Unknown error"
  * components:
  *   securitySchemes:
  *     bearerAuth:

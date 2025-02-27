@@ -92,3 +92,13 @@ export async function getBalanceGet(req: Request, res: Response) {
     res.send({balance: result.balance})
     return
 }
+
+export async function paymentPolicyGet(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.status(500)
+        res.send({msg: 'Internal server error (x-email missing)'})
+        return
+    }
+    const result = await parkingOwner.getPaymentPolicy(email)
+}
