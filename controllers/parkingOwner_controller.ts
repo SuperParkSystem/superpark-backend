@@ -11,7 +11,7 @@ const ParkingOwnerSaltRounds = 10
 export async function createPut(req : Request, res : Response) {
   var email = req.body.email
   var password = req.body.password
-  if (email == undefined || password === undefined) {
+  if (email === undefined || password === undefined) {
     res.sendStatus(400)
     return
   }
