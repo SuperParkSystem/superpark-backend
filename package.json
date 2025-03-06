@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
     "@types/pg": "^8.11.11",
     "@types/pg-pool": "^2.0.6",
     "bcrypt": "^5.1.1",
