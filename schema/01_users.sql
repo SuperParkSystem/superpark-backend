@@ -10,8 +10,10 @@ CREATE TABLE drivers (
 
 CREATE TABLE parking_owners (
     email varchar(255) PRIMARY KEY,
-    password_hash varchar(255) NOT NULL, lat float,
+    password_hash varchar(255) NOT NULL, 
+    lat float,
     lon float,
+    paymentRate numeric(10, 2) NOT NULL DEFAULT,
     balance numeric(10, 2) NOT NULL DEFAULT 0
 );
 
