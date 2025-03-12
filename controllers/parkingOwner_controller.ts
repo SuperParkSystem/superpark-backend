@@ -65,6 +65,7 @@ export async function verifyPaymentGet(req: Request, res: Response) {
     if (sessionID === undefined) {
         res.status(400)
         res.send({msg: 'Missing sessionID'})
+        return
     }
     const result = await parkingOwner.verifyPaymentStatus(sessionID)
     if (result.type != me.NoError) {

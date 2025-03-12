@@ -2,7 +2,24 @@ import { DatabaseError } from "pg"
 import pool from "./connectionPool"
 import * as me from "./errors"
 
-import { randomUUID } from "crypto"
+export async function createOwner(email: string, passwordHash: string) {
+    // Only to be used to create test user
+    try {
+        await pool.query("INSERT INTO product_owners (email, password_hash) VALUES ($1, $2);", [email, passwordHash])
+    } catch (err: any) {
+        if (err instanceof DatabaseError) {
+            if (err.code == "23505") {
+                return {type: me.DuplError}
+            } else {
+                console.log(err)
+                return {type: me.UnknownError}
+            }
+        } else {
+            console.log(err)
+            return {type: me.UnknownError}
+        }
+    }
+}
 
 export async function fetchPass(email: string) {
     try {
