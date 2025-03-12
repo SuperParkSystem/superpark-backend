@@ -109,8 +109,8 @@ export async function paySession(sessionID: string, driverEmail: string) {
     const conn = await pool.connect()
     try {
         await conn.query("BEGIN")
-        var res = await conn.query('SELECT end_time, start_time, parking_owner_email FROM sessions \
-                                  WHERE session_id = $1 AND driver_email = $2;',
+        var res = await conn.query('SELECT end_time, start_time, parking_owner_email, po.payment_policy as pp FROM sessions s, parking_owners po\
+                                  WHERE session_id = $1 AND driver_email = $2 AND s.parking_owner_email = po.email;',
                                   [sessionID, driverEmail])
 
         if (res.rows.length == 0) {
@@ -118,7 +118,7 @@ export async function paySession(sessionID: string, driverEmail: string) {
             return {type: me.UnknownError}
         }
         const po = res.rows[0].parking_owner_email
-        const amt = calcAmt(res.rows[0].end_time - res.rows[0].start_time)
+        const amt = calcAmt(res.rows[0].end_time - res.rows[0].start_time, res.rows[0].pp)
         // TODO: variable rate, currently 1 every 10 minutes
 
         var res = await conn.query('UPDATE sessions SET payment_status = 1 WHERE \
