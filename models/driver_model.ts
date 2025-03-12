@@ -4,8 +4,8 @@ import * as me from "./errors"
 
 import { randomUUID } from "crypto"
 
-function calcAmt(duration) {
-    return duration/(60*1000*10)
+function calcAmt(duration: number, rate: number) {
+    return duration*rate/(60*1000*10)
 }
 
 export async function create(email: string, password: string) {
@@ -94,11 +94,11 @@ export async function stopSession(sessionID: string, driverEmail: string, parkin
             return {type: me.NotExistError}
         }
         res = await pool.query(
-            "SELECT start_time, end_time, parking_owner_email FROM sessions WHERE session_id=$1;", [sessionID]
+            "SELECT start_time, end_time, parking_owner_email, po.payment_policy as pp FROM sessions s, parking_owners po WHERE session_id=$1 AND s.parking_owner_email = po.email;", [sessionID]
         )
         console.log("Got final results")
         const duration = res.rows[0].end_time - res.rows[0].start_time
-        return {type: me.NoError, duration: duration/1000, amount: calcAmt(duration)}
+        return {type: me.NoError, duration: duration/1000, amount: calcAmt(duration, res.rows[0].pp)}
     } catch(err) {
         console.log(err)
         return {type: me.UnknownError}

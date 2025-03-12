@@ -11,6 +11,10 @@ router.get('/payment', parkingOwner.verifyPaymentGet)
 
 router.get('/balance', parkingOwner.getBalanceGet)
 
+router.get('/paymentPolicy', parkingOwner.getPaymentPolicy)
+
+router.post('/paymentPolicy', parkingOwner.postPaymentPolicy)
+
 export default router
 
 /**@openapi
@@ -84,6 +88,60 @@ export default router
  *                 properties:
  *                   balance:
  *                     type: number
+ *         '500':
+ *           description: Internal server error
+ *   "/parkingOwner/paymentPolicy":
+ *     get:
+ *       summary: Get payment policy
+ *       tags:
+ *       - Payment
+ *       security:
+ *       - bearerAuth: []
+ *       responses:
+ *         '200':
+ *           description: Payment policy information
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   paymentPolicy:
+ *                     type: string
+ *         '500':
+ *           description: Internal server error
+ *     post:
+ *       summary: Update payment policy
+ *       tags:
+ *       - Payment
+ *       security:
+ *       - bearerAuth: []
+ *       parameters:
+ *       - name: value
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       responses:
+ *         '201':
+ *           description: Payment policy updated
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   msg:
+ *                     type: string
+ *                     example: Updated
+ *         '400':
+ *           description: Invalid or missing query parameter
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   msg:
+ *                     type: string
+ *                     example: Query param "value" is missing or must be an integer
  *         '500':
  *           description: Internal server error
  * components:
