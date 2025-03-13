@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import * as driver from "../models/driver_model.ts";
 import * as me from "../models/errors.ts"
@@ -84,6 +84,7 @@ export async function startSessionPut(req: Request, res: Response) {
     res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, starTime: result.startTime})
     return 
 }
+
 
 export async function stopSessionPut(req: Request, res: Response) {
     var email = req.headers['x-email']?.toString()
