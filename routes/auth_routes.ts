@@ -1,6 +1,7 @@
 import express from "express";
 import * as driver from "../controllers/driver_controller"
 import * as parkingOwner from "../controllers/parkingOwner_controller"
+import * as productOwner from "../controllers/productOwner_controller.ts"
 
 import * as auth from "../middleware/auth_middleware"
 
@@ -20,13 +21,20 @@ router.post('/parkingOwner/token', parkingOwner.createTokenPost)
 router.use('/parkingOwner/verify', auth.parkingOwnerAuth)
 router.get('/parkingOwner/verify', parkingOwner.testToken)
 
+router.put('/productOwner', productOwner.createPut)
+
+router.post('/productOwner/token', productOwner.createTokenPost)
+
+router.use('/productOwner/verify', auth.productOwnerAuth)
+router.get('/productOwner/verify', productOwner.testToken)
+
 export default router;
 
 /**@openapi
  * openapi: 3.0.3
  * info:
  *   title: Authentication API
- *   description: API for driver and parking owner registration and authentication
+ *   description: API for driver, parking owner, and product owner registration and authentication
  *   version: 1.0.0
  * servers:
  * - url: https://api.example.com
@@ -149,6 +157,74 @@ export default router;
  *                   type: string
  *                   format: email
  *                   example: owner@example.com
+ *                 password:
+ *                   type: string
+ *                   format: password
+ *                   example: securepassword123
+ *       responses:
+ *         '201':
+ *           description: Authentication successful, token returned
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   token:
+ *                     type: string
+ *                     example: eyJhbGciOiJIUzI1...
+ *         '400':
+ *           description: Bad request (missing fields)
+ *         '401':
+ *           description: Unauthorized (invalid credentials)
+ *   "/auth/productOwner":
+ *     put:
+ *       tags:
+ *       - Auth
+ *       summary: Register a new product owner
+ *       description: Registers a new product owner with an email and password.
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *               - email
+ *               - password
+ *               properties:
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: productowner@example.com
+ *                 password:
+ *                   type: string
+ *                   format: password
+ *                   example: securepassword123
+ *       responses:
+ *         '201':
+ *           description: Product owner created successfully
+ *         '400':
+ *           description: Bad request (missing fields or product owner already exists)
+ *   "/auth/productOwner/token":
+ *     post:
+ *       tags:
+ *       - Auth
+ *       summary: Authenticate a product owner
+ *       description: Authenticates a product owner and returns an access token.
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *               - email
+ *               - password
+ *               properties:
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: productowner@example.com
  *                 password:
  *                   type: string
  *                   format: password

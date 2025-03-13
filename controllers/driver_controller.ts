@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import * as driver from "../models/driver_model.ts";
 import * as me from "../models/errors.ts"
