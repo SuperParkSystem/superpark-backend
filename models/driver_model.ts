@@ -34,7 +34,7 @@ export async function fetchPass(email: string) {
         console.log("result rows: ")
         console.log(result.rows)
         console.log("done")
-        return result.rows[0].password_hash
+        return {type: me.NoError, passHash: result.rows[0].password_hash}
     } catch (err: any) {
         return {type: me.UnknownError}
     }
@@ -164,4 +164,21 @@ export async function getActiveSession(email: string) {
     } else {
         return {type: me.NotExistError}
     }
+}
+
+export async function getProfile(email: string) {
+    const res = await pool.query("SELECT email, balance FROM drivers WHERE email = $1;", [email])
+    if (res.rows.length > 0) {
+        return {type: me.NoError, email: res.rows[0].email, balance: res.rows[0].balance}
+    } else {
+        return {type: me.NotExistError}
+    }
+}
+
+export async function changePassword(email: string, newPassHash: string) {
+    var res = await pool.query("UPDATE drivers SET password_hash = $1 WHERE email = $2;", [newPassHash, email])
+    if (res.rowCount == 0) {
+        return {type: me.NotExistError}
+    }
+    return {type: me.NoError}
 }

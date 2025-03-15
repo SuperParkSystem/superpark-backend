@@ -34,7 +34,16 @@ export async function createTokenPost(req : express.Request, res : express.Respo
         res.sendStatus(400)
         return
     }
-    const passHash = await driver.fetchPass(email)
+    const passHashRes = await driver.fetchPass(email)
+    if (passHashRes.type != me.NoError) {
+        res.status(401).send({msg: "Not authenticated or unknown error"})
+        return
+    }
+    const passHash = passHashRes.passHash
+    if (passHash === undefined) {
+        res.status(500).send({msg: "passhash unexpectedly undefined"})
+        return
+    }
     console.log("Passhash: ", passHash)
     try {
         if (!await bcrypt.compare(password, passHash)) {
@@ -144,6 +153,66 @@ export async function getBalanceGet(req: Request, res: Response) {
     res.status(200)
     res.send({balance: result.balance})
     return
+}
+
+export async function getProfileGet(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.sendStatus(500)
+        return
+    }
+    var result = await driver.getProfile(email)
+    res.status(200)
+    res.send({email: result.email, balance: result.balance})
+    return
+
+}
+
+export async function changePasswordPost(req: Request, res: Response) {
+    var email = req.headers['x-email']?.toString()
+    if (email === undefined) {
+        res.sendStatus(500)
+        return
+    }
+    var oldPass = req.body.oldPassword
+    var newPass = req.body.newPassword
+    if (oldPass === undefined || newPass === undefined) {
+        res.status(400)
+        res.send({msg: "Missing params oldPassword or newPassword"})
+        return
+    }
+    var oldHashRes = await driver.fetchPass(email)
+    if (oldHashRes.type === me.NotExistError) {
+        res.status(500).send({msg: "Driver does not exist"})
+        return
+    } else if (oldHashRes.type === me.UnknownError) {
+        res.status(500).send({msg: "Unknown error"})
+        return
+    }
+    const oldHash = oldHashRes.passHash
+    if (oldHash === undefined) {
+        res.status(500).send({msg: "Unknown error"})
+        return
+    }
+
+    const validPass = await bcrypt.compare(oldPass, oldHash)
+    if (!validPass) {
+        res.status(401)
+        res.send({ msg: "Incorrect password" })
+        return
+    }
+
+    var result = await driver.changePassword(email, newPass)
+    if (result.type === me.NoError) {
+        res.sendStatus(200)
+    } else if (result.type === me.NotExistError) {
+        res.status(401)
+        res.send({msg: "Incorrect password"})
+    } else {
+        res.status(500)
+        res.send({msg: "Unknown error"})
+        console.log(result)
+    }
 }
 
 export async function getSessions(req: Request, res: Response) {
