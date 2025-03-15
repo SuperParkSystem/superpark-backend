@@ -16,6 +16,10 @@ router.get('/balance', driver.getBalanceGet)
 
 router.get('/session', driver.getSessions)
 
+router.post('/password', driver.changePasswordPost)
+
+router.get('/', driver.getProfileGet)
+
 export default router;
 
 /**
@@ -174,6 +178,63 @@ export default router;
  *           application/json:
  *             example:
  *               msg: "Unknown error"
+ * "/driver/password":
+ *   post:
+ *     summary: Change password
+ *     description: Changes the password of the driver based on the provided email header.
+ *     tags:
+ *     - Profile
+ *     security:
+ *     - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             oldPassword: "oldPass"
+ *             newPassword: "newPass"
+ *     responses:
+ *       "200":
+ *         description: Password changed successfully.
+ *       "400":
+ *         description: Bad request (e.g., missing parameters).
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "Missing params oldPassword or newPassword"
+ *       "401":
+ *         description: Unauthorized request.
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "Incorrect password"
+ *       "500":
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "Unknown error"
+ * "/driver/":
+ *   get:
+ *     summary: Get driver profile
+ *     description: Retrieves the profile information of the driver.
+ *     tags:
+ *     - Profile
+ *     security:
+ *     - bearerAuth: []
+ *     responses:
+ *       "200":
+ *         description: Successfully retrieved driver profile.
+ *         content:
+ *           application/json:
+ *             example:
+ *               email: "john.doe@example.com"
+ *               balance: 123.45
+ *       "401":
+ *         description: Unauthorized request.
+ *       "500":
+ *         description: Internal server error.
+ * 
  * components:
  *   securitySchemes:
  *     bearerAuth:
