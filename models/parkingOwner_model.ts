@@ -36,6 +36,42 @@ export async function fetchPass(email: string) {
   }
 }
 
+export async function setPass(email: string, passHash: string) {
+  try {
+    await pool.query("UPDATE parking_owners SET password_hash = $2 WHERE email = $1;", [email, passHash])
+  } catch (err: any) {
+    return { type: me.UnknownError }
+  }
+  return {type: me.NoError}
+}
+
+export async function setLocation(email: string, lat: number, lon: number) {
+  try {
+    await pool.query("UPDATE parking_owners SET lat = $2, lon = $3 WHERE email = $1;", [email, lat, lon])
+  } catch (err: any) {
+    return { type: me.UnknownError }
+  }
+  return {type: me.NoError}
+}
+
+export async function fetchProfile(email: string) {
+  try {
+    var result = await pool.query("SELECT email, lat, lon, payment_policy, balance FROM parking_owners WHERE email = $1;", [email])
+    if (result.rowCount === null || result.rowCount < 1) {
+      return { type: me.NotExistError }
+    }
+    return { type: me.NoError, 
+      email: result.rows[0].email, 
+      lat: result.rows[0].lat, 
+      lon: result.rows[0].lon, 
+      balance: result.rows[0].balance,
+      paymentPolicy: result.rows[0].payment_policy 
+    }
+  } catch (err: any) {
+    return { type: me.UnknownError }
+  }
+}
+
 export async function createToken(email: string, token: string) {
   pool.query("INSERT INTO parking_owners_sessions (email, session_key) VALUES ($1, $2);", [email, token])
 }
