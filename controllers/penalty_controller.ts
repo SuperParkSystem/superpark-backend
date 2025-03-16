@@ -1,6 +1,6 @@
 import express from "express";
 import type { Request, Response } from "express";
-import db from "../database"; // Ensure correct DB connection
+import * as driver from "../models/driver_model"; // ✅ Import driver model functions
 import * as me from "../models/errors";
 
 const PENALTY_RATE = 5; // Amount per extra minute
@@ -14,19 +14,15 @@ export async function checkPenalty(req: Request, res: Response) {
     }
 
     try {
-        const session = await db("sessions")
-            .where({ driver_email: email })
-            .andWhere("end_time", null) // Active session
-            .first();
-
-        if (!session) {
+        const session = await driver.getActiveSession(email);
+        if (session.type !== me.NoError) {
             res.status(404).send({ msg: "No active session found" });
             return;
         }
 
-        const startTime = new Date(session.start_time);
+        const startTime = new Date(session.startTime);
         const currentTime = new Date();
-        const duration = Math.floor((currentTime.getTime() - startTime.getTime()) / 60000); // in minutes
+        const duration = Math.floor((currentTime.getTime() - startTime.getTime()) / 60000); // Convert to minutes
 
         let penalty = 0;
         if (duration > TIME_LIMIT) {
@@ -35,8 +31,8 @@ export async function checkPenalty(req: Request, res: Response) {
         }
 
         res.status(200).send({
-            session_id: session.session_id,
-            start_time: session.start_time,
+            session_id: session.sessionID,
+            start_time: session.startTime,
             duration,
             penalty,
             msg: penalty > 0 ? "Penalty applies" : "Within time limit"
@@ -55,19 +51,15 @@ export async function applyPenalty(req: Request, res: Response) {
     }
 
     try {
-        const session = await db("sessions")
-            .where({ driver_email: email })
-            .andWhere("end_time", null)
-            .first();
-
-        if (!session) {
+        const session = await driver.getActiveSession(email);
+        if (session.type !== me.NoError) {
             res.status(404).send({ msg: "No active session found" });
             return;
         }
 
-        const startTime = new Date(session.start_time);
+        const startTime = new Date(session.startTime);
         const currentTime = new Date();
-        const duration = Math.floor((currentTime.getTime() - startTime.getTime()) / 60000); // in minutes
+        const duration = Math.floor((currentTime.getTime() - startTime.getTime()) / 60000); // Convert to minutes
 
         let penalty = 0;
         if (duration > TIME_LIMIT) {
@@ -76,25 +68,21 @@ export async function applyPenalty(req: Request, res: Response) {
         }
 
         if (penalty > 0) {
-            const driver = await db("drivers").where({ email }).first();
-            if (!driver) {
-                res.status(404).send({ msg: "Driver not found" });
+            // ✅ Deduct penalty separately from balance
+            const penaltyResult = await driver.deductPenalty(email, penalty);
+            if (penaltyResult.type !== me.NoError) {
+                res.status(500).send({ msg: "Error applying penalty" });
                 return;
             }
-
-            const newBalance = driver.balance - penalty;
-            await db("drivers").where({ email }).update({ balance: newBalance });
-
-            res.status(200).send({
-                session_id: session.session_id,
-                duration,
-                penalty,
-                new_balance: newBalance,
-                msg: "Penalty applied successfully"
-            });
-        } else {
-            res.status(200).send({ msg: "No penalty required" });
         }
+
+        res.status(200).send({
+            session_id: session.sessionID,
+            duration,
+            penalty,
+            new_balance: penalty > 0 ? penaltyResult.new_balance : undefined,
+            msg: penalty > 0 ? "Penalty applied successfully" : "No penalty required"
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send({ msg: "Server error" });
