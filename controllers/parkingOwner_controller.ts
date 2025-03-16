@@ -129,3 +129,37 @@ export async function postPaymentPolicy(req: Request, res: Response) {
   res.status(201).send({ msg: 'Updated' })
 }
 
+export async function getProfileGet(req: Request, res: Response) {
+  var email = req.headers['x-email']?.toString()
+  if (email === undefined) {
+    res.status(500).send({ msg: 'Internal server error' })
+    return
+  }
+  const result = await parkingOwner.fetchProfile(email)
+  if (result.type !== me.NoError) {
+    res.status(500).send({msg: 'Internal server error'})
+    return
+  }
+  res.status(200)
+  res.send({ email: result.email, lat: result.lat, lon: result.lon, balance: result.balance, paymentPolicy: result.paymentPolicy })
+}
+
+export async function setLocationPost(req: Request, res: Response) {
+  var email = req.headers['x-email']?.toString()
+  if (email === undefined) {
+    res.status(500).send({ msg: 'Internal server error' })
+    return
+  }
+  if (req.query['lat'] === undefined || req.query['lon'] === undefined) {
+    res.status(400).send({ msg: 'Query param \"lat\" or \"lon\" is missing' })
+    return
+  }
+  const lat: number= parseFloat(req.query['lat']?.toString())
+  const lon: number= parseFloat(req.query['lon']?.toString())
+  if (lat === undefined || lon === undefined) {
+    res.status(400).send({ msg: 'Query param \"lat\" or \"lon\" is missing' })
+    return
+  }
+  const result = await parkingOwner.setLocation(email, lat, lon)
+  res.status(201).send({ msg: 'Updated' })
+}

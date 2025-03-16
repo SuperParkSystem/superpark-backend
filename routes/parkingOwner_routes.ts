@@ -15,6 +15,10 @@ router.get('/paymentPolicy', parkingOwner.getPaymentPolicy)
 
 router.post('/paymentPolicy', parkingOwner.postPaymentPolicy)
 
+router.post('/location', parkingOwner.setLocationPost)
+
+router.get('/', parkingOwner.getProfileGet)
+
 export default router
 
 /**@openapi
@@ -144,6 +148,72 @@ export default router
  *                     example: Query param "value" is missing or must be an integer
  *         '500':
  *           description: Internal server error
+ *   "/parkingOwner/location":
+ *     post:
+ *       summary: Set location
+ *       tags:
+ *       - Location
+ *       security:
+ *       - bearerAuth: []
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 latitude:
+ *                   type: number
+ *                 longitude:
+ *                   type: number
+ *       responses:
+ *         '201':
+ *           description: Location set successfully
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   msg:
+ *                     type: string
+ *                     example: Location set
+ *         '400':
+ *           description: Invalid request body
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   msg:
+ *                     type: string
+ *                     example: Invalid latitude or longitude
+ *         '500':
+ *           description: Internal server error
+ *   "/parkingOwner":
+ *     get:
+ *       summary: Get profile
+ *       tags:
+ *       - Profile
+ *       security:
+ *       - bearerAuth: []
+ *       responses:
+ *         '200':
+ *           description: Profile information
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   profile:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *         '500':
+ *           description: Internal server error
+ * 
  * components:
  *   securitySchemes:
  *     bearerAuth:
