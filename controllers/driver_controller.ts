@@ -13,17 +13,24 @@ export async function createPut(req : express.Request, res : express.Response) {
   var email = req.body.email
   var password = req.body.password
   if (email === undefined || password === undefined) {
-    res.sendStatus(400)
+    res.status(400)
+    res.send({msg: "Missing fields"})
     return
   }
   console.log("Extracted email and password")
   let salted = await bcrypt.hash(password, DriverSaltRounds)
   let result = await driver.create(email, salted)
   if (result === null || result === undefined) {
-      res.sendStatus(201) // TODO: check code
-  } else {
-      res.sendStatus(400)
+      res.status(201) // TODO: check code
+      res.send({msg: "Success"})
+      return
+  } else if (result.type === me.DuplError) {
+      res.status(400)
+      res.send({msg: "Email already exists"})
       console.log("ERROR: ", result)
+  } else if (result.type === me.UnknownError) {
+    res.status(500)
+    res.send({msg: "Unknown error"})
   }
 }
 
@@ -31,28 +38,33 @@ export async function createTokenPost(req : express.Request, res : express.Respo
     var email = req.body.email
     var password = req.body.password
     if (email === undefined || password === undefined) {
-        res.sendStatus(400)
+        res.status(400)
+        res.send({msg: "Missing fields"})
         return
     }
     const passHashRes = await driver.fetchPass(email)
     if (passHashRes.type != me.NoError) {
-        res.status(401).send({msg: "Not authenticated or unknown error"})
+        res.status(401)
+        res.send({msg: "Not authenticated or unknown error"})
         return
     }
     const passHash = passHashRes.passHash
     if (passHash === undefined) {
-        res.status(500).send({msg: "passhash unexpectedly undefined"})
+        res.status(500)
+        res.send({msg: "passhash unexpectedly undefined"})
         return
     }
     console.log("Passhash: ", passHash)
     try {
         if (!await bcrypt.compare(password, passHash)) {
-            res.sendStatus(401)
+            res.status(401)
+            res.send({msg: "Invalid password"})
             return
         }
     } catch (err:any) {
         console.log(err)
-        res.sendStatus(401)
+        res.status(401)
+        res.send({msg: "Error comparing password"})
         return
     }
     const buf = Buffer.alloc(64)
@@ -70,19 +82,22 @@ export async function testToken(req: Request, res: Response) {
 }
 
 export async function startSessionPut(req: Request, res: Response) {
-    var email : string | undefined | string[] = req.headers['x-email']
+    var email : string | undefined = req.headers['x-email']?.toString()
     var parkingOwner : string | undefined = req.query.parkingOwnerEmail?.toString()
-    if (typeof email != 'string') {
-        res.sendStatus(501)
+    if (email === undefined) {
+        res.status(500)
+        res.send({msg: "Missing email header"})
         return
     }
     if (parkingOwner === undefined) {
-        res.sendStatus(400)
+        res.status(400)
+        res.send({msg: "Missing parkingOwnerEmail query param"})
         return
     }
     var result = await driver.startSession(email, parkingOwner)
     if (result.type == me.UnknownError) {
-        res.sendStatus(501)
+        res.status(501)
+        res.send({msg: "Unknown error"})
         return
     } else if (result.type === me.DuplError) {
         res.status(400)
@@ -90,7 +105,7 @@ export async function startSessionPut(req: Request, res: Response) {
         return
     }
     res.status(201)
-    res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, starTime: result.startTime})
+    res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, startTime: result.startTime})
     return 
 }
 
