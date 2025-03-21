@@ -1,6 +1,7 @@
 import express from "express";
 import type { Request, Response } from "express";
-import * as driver from "../models/driver_model"; // ✅ Import driver model functions
+import * as driver from "../models/driver_model"; 
+import * as pen from "../models/penalty_model"
 import * as me from "../models/errors";
 
 const PENALTY_RATE = 5; // Amount per extra minute
@@ -67,15 +68,18 @@ export async function applyPenalty(req: Request, res: Response) {
             penalty = excessTime * PENALTY_RATE;
         }
 
+        let penaltyResult
+
         if (penalty > 0) {
             // ✅ Deduct penalty separately from balance
-            const penaltyResult = await driver.deductPenalty(email, penalty);
+            penaltyResult = await pen.deductPenalty(email, penalty);
             if (penaltyResult.type !== me.NoError) {
                 res.status(500).send({ msg: "Error applying penalty" });
                 return;
             }
-        }
+        } else {
 
+        }
         res.status(200).send({
             session_id: session.sessionID,
             duration,
@@ -83,6 +87,7 @@ export async function applyPenalty(req: Request, res: Response) {
             new_balance: penalty > 0 ? penaltyResult.new_balance : undefined,
             msg: penalty > 0 ? "Penalty applied successfully" : "No penalty required"
         });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).send({ msg: "Server error" });
