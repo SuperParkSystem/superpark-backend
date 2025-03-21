@@ -80,6 +80,11 @@ export default router;
  *       required: true
  *       content:
  *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sessionID:
+ *                 type: string
  *           example:
  *             sessionID: abc123
  *     responses:
@@ -89,8 +94,14 @@ export default router;
  *           application/json:
  *             example:
  *               duration: 3600
+ *               totalAmount: 20.5
+ *               penaltyAmount: 5.0
  *       '400':
  *         description: Bad request.
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: Error stopping session
  *       '401':
  *         description: Unauthorized request.
  *       '404':
@@ -109,6 +120,11 @@ export default router;
  *       required: true
  *       content:
  *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sessionID:
+ *                 type: string
  *           example:
  *             sessionID: abc123
  *     responses:
@@ -117,13 +133,14 @@ export default router;
  *         content:
  *           application/json:
  *             example:
- *               amount: 123.45
+ *               totalAmount: 20.5
+ *               penaltyAmount: 5.0
  *       '400':
  *         description: Bad request (e.g., missing parameters or insufficient funds).
  *         content:
  *           application/json:
  *             example:
- *               msg: Insufficient funds.
+ *               msg: Missing request body
  *       '401':
  *         description: Unauthorized request.
  *       '500':

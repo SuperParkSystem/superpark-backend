@@ -121,14 +121,10 @@ export async function stopSessionPut(req: Request, res: Response) {
     var result = await driver.stopSession(sessionID, email, parkingOwner.toString())
     if (result.type === me.NoError) {
         res.status(200)
-        var duration : number|undefined = result.duration
-        if (duration === undefined) {
-            res.sendStatus(500)
-            return
-        }
-        res.send({duration: duration})
+        res.send({duration: result.duration, totalAmount: result.totalAmount, penaltyAmount: result.penaltyAmount})
     } else {
-        res.sendStatus(400)
+        res.status(400)
+        res.send({msg: "Error stopping session"})
     }
 }
 
@@ -150,7 +146,7 @@ export async function paySessionPost(req: Request, res: Response) {
     const result = await driver.paySession(sessionID, email)
     if (result.type === me.NoError) {
         res.status(200)
-        res.send({amount: result.amount})
+        res.send({totalAmount: result.totalAmount, penaltyAmount: result.penaltyAmount})
         return
     } else {
         res.sendStatus(500)
