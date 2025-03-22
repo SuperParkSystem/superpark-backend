@@ -174,6 +174,7 @@ export async function getProfileGet(req: Request, res: Response) {
     }
     var result = await driver.getProfile(email)
     res.status(200)
+    console.log(result)
     res.send({email: result.email, balance: result.balance})
     return
 
