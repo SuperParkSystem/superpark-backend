@@ -1,4 +1,4 @@
-import pool from "../connectionPool";
+import pool from "../models/connectionPool";
 import * as me from "../models/errors";
 
 export async function getParkingOwnerByEmail(email: string) {

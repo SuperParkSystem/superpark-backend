@@ -131,3 +131,129 @@ export async function setPaymentPolicy(email: string, paymentPolicy: number) {
     return { type: me.NoError }
   }
 }
+//____________________-amruta _______________
+// to get payment status from db
+
+export async function fetchPaymentStatus(email: string) {
+  try {
+    const result = await pool.query(
+      "SELECT payment_status FROM parking_owners WHERE email = $1;",
+      [email]
+    );
+
+    if (result.rowCount === null || result.rowCount < 1) {
+      return { type: me.NotExistError };
+    }
+
+    return { type: me.NoError, paymentStatus: result.rows[0].payment_status };
+  } catch (err: any) {
+    return { type: me.UnknownError };
+  }
+}
+
+
+// to get stats from db
+
+export async function fetchUsageStatistics(email: string) {
+  try {
+    // Example query to fetch usage statistics
+    const result = await pool.query(
+      `SELECT 
+         COUNT(session_id) AS total_sessions,
+         SUM(payment_amount) AS total_revenue,
+         AVG(duration) AS average_duration
+       FROM sessions
+       WHERE parking_owner_email = $1;`,
+      [email]
+    );
+
+    if (result.rowCount === null || result.rowCount < 1) {
+      return { type: me.NotExistError };
+    }
+
+    return {
+      type: me.NoError,
+      totalSessions: result.rows[0].total_sessions,
+      totalRevenue: result.rows[0].total_revenue,
+      averageDuration: result.rows[0].average_duration,
+    };
+  } catch (err: any) {
+    console.error("Error fetching usage statistics:", err);
+    return { type: me.UnknownError };
+  }
+}
+
+// to get occupancy 
+
+export async function checkParkingLotOccupancy(email: string) {
+  try {
+    // Fetch the total capacity and current occupancy of the parking lot
+    const result = await pool.query(
+      `SELECT 
+         total_capacity,
+         current_occupancy
+       FROM parking_lots
+       WHERE owner_email = $1;`,
+      [email]
+    );
+
+    if (result.rowCount === null || result.rowCount < 1) {
+      return { type: me.NotExistError };
+    }
+
+    const totalCapacity = result.rows[0].total_capacity;
+    const currentOccupancy = result.rows[0].current_occupancy;
+
+    return {
+      type: me.NoError,
+      totalCapacity,
+      currentOccupancy,
+    };
+  } catch (err: any) {
+    console.error("Error checking parking lot occupancy:", err);
+    return { type: me.UnknownError };
+  }
+}
+
+// to take feedback for one particular parking owner
+
+export async function fetchFeedbackForOwner(parkingOwnerEmail: string) {
+  try {
+    const result = await pool.query(
+      `SELECT driver_email, feedback, rating, status
+       FROM driver_feedback
+       WHERE parking_owner_email = $1;`,
+      [parkingOwnerEmail]
+    );
+
+    if (result.rowCount === null || result.rowCount < 1) {
+      return { type: me.NotExistError };
+    }
+
+    return { type: me.NoError, feedbacks: result.rows };
+  } catch (err: any) {
+    console.error("Error fetching feedback:", err);
+    return { type: me.UnknownError };
+  }
+}
+//feedback viewing
+export async function getDriverFeedback(parkingOwnerEmail: string) {
+  try {
+      const result = await pool.query(
+          `SELECT df.driver_email, df.feedback, df.rating
+           FROM driver_feedback df
+           JOIN sessions s ON df.parking_owner_email = s.parking_owner_email
+           WHERE df.parking_owner_email = $1;`,
+          [parkingOwnerEmail]
+      );
+
+      if (result.rows.length === 0) {
+          return { type: me.NotExistError };
+      }
+
+      return { type: me.NoError, feedbacks: result.rows };
+  } catch (error) {
+      console.error("Error fetching driver feedback:", error);
+      return { type: me.UnknownError };
+  }
+}
