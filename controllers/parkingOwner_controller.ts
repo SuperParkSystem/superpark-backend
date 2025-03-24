@@ -186,3 +186,128 @@ export async function setLocationPost(req: Request, res: Response) {
   const result = await parkingOwner.setLocation(email, lat, lon)
   res.status(201).send({ msg: 'Updated' })
 }
+
+//___________________________amruta____________
+
+// function to get status of payment for parking lot owner - product owner 
+
+export async function getPaymentStatus(req: Request, res: Response) {
+  var email = req.headers['x-email']?.toString();
+  if (email === undefined) {
+    res.status(500).send({ msg: 'Internal server error (x-email missing)' });
+    return;
+  }
+
+  const result = await parkingOwner.fetchPaymentStatus(email);
+  if (result.type !== me.NoError) {
+    res.status(400).send({ msg: 'Encountered error' });
+    return;
+  }
+
+  res.status(200).send({ paymentStatus: result.paymentStatus });
+}
+
+// usage statistics for parking owners
+
+export async function getUsageStatistics(req: Request, res: Response) {
+  const email = req.headers['x-email']?.toString();
+  if (email === undefined) {
+    res.status(500).send({ msg: 'Internal server error (x-email missing)' });
+    return;
+  }
+
+  const result = await parkingOwner.fetchUsageStatistics(email);
+  if (result.type !== me.NoError) {
+    res.status(400).send({ msg: 'Encountered error' });
+    return;
+  }
+
+  res.status(200).send({
+    totalSessions: result.totalSessions,
+    totalRevenue: result.totalRevenue,
+    averageDuration: result.averageDuration,
+  });
+}
+
+// to check if parking lot is full or not
+
+export async function checkAndNotifyParkingLotOccupancy(req: Request, res: Response) {
+  const email = req.headers['x-email']?.toString();
+  if (email === undefined) {
+    res.status(500).send({ msg: 'Internal server error (x-email missing)' });
+    return;
+  }
+
+  // Fetch parking lot occupancy data
+  const result = await parkingOwner.checkParkingLotOccupancy(email);
+  if (result.type !== me.NoError) {
+    res.status(400).send({ msg: 'Encountered error' });
+    return;
+  }
+
+  const { totalCapacity, currentOccupancy } = result;
+
+  // Define the threshold for sending alerts (e.g., 90% full)
+  const occupancyThreshold = 0.9 * totalCapacity;
+
+  if (currentOccupancy >= occupancyThreshold) {
+    // Send alert (e.g., via email, SMS, or push notification)
+    const alertMessage = `Your parking lot is about to be full! Current occupancy: ${currentOccupancy}/${totalCapacity}.`;
+    console.log(alertMessage); // Replace with actual notification logic
+
+    res.status(200).send({
+      msg: "Alert sent",
+      alertMessage,
+    });
+  } else {
+    res.status(200).send({
+      msg: "No alert needed",
+      currentOccupancy,
+      totalCapacity,
+    });
+  }
+}
+
+// takes for feedback for that particular owner_email
+
+export async function getFeedbackForOwner(req: Request, res: Response) {
+  const parkingOwnerEmail = req.headers['x-email']?.toString();
+  if (parkingOwnerEmail === undefined) {
+    res.status(500).send({ msg: 'Internal server error (x-email missing)' });
+    return;
+  }
+
+  const result = await parkingOwner.fetchFeedbackForOwner(parkingOwnerEmail);
+  if (result.type !== me.NoError) {
+    if (result.type === me.NotExistError) {
+      res.status(404).send({ msg: 'No feedback found for this parking owner' });
+    } else {
+      res.status(500).send({ msg: 'Internal server error' });
+    }
+    return;
+  }
+
+  res.status(200).send({ feedbacks: result.feedbacks });
+}
+
+// Add this function to parkingOwner_controller.ts
+export async function getDriverFeedbackGet(req: Request, res: Response) {
+  const email = req.headers['x-email']?.toString();
+  if (email === undefined) {
+      res.status(500).send({ msg: 'Internal server error' });
+      return;
+  }
+
+  const result = await parkingOwner.getDriverFeedback(email);
+  if (result.type !== me.NoError) {
+      if (result.type === me.NotExistError) {
+          res.status(404).send({ msg: 'No feedback found' });
+          return;
+      } else {
+          res.status(500).send({ msg: 'Internal server error' });
+          return;
+      }
+  }
+
+  res.status(200).send({ feedbacks: result.feedbacks });
+}

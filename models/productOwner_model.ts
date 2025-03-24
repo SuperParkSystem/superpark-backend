@@ -68,3 +68,57 @@ export async function increaseBalance(driverEmail: string, amount: number) {
         return {type: me.UnknownError}
     }
 }
+
+
+
+// Function to get all parking lot ratings
+export async function getParkingLotRatings() {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         parking_owner_email,
+         AVG(rating) AS average_rating
+       FROM driver_feedback
+       GROUP BY parking_owner_email;`
+    );
+
+    if (result.rowCount === 0) {
+      return { type: me.NotExistError };
+    }
+
+    return {
+      type: me.NoError,
+      data: result.rows, // Return all parking lot ratings
+    };
+  } catch (err: any) {
+    console.error("Database error:", err);
+    return { type: me.DbError };
+  }
+}
+
+// Function to get parking lot ratings by owner email
+export async function getParkingLotRatingsByOwnerEmail(ownerEmail: string) {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         parking_owner_email,
+         AVG(rating) AS average_rating
+       FROM driver_feedback
+       WHERE parking_owner_email = $1
+       GROUP BY parking_owner_email;`,
+      [ownerEmail]
+    );
+
+    if (result.rowCount === 0) {
+      return { type: me.NotExistError };
+    }
+
+    return {
+      type: me.NoError,
+      data: result.rows[0], // Return ratings for the specific owner
+    };
+  } catch (err: any) {
+    console.error("Database error:", err);
+    return { type: me.DbError };
+  }
+}
