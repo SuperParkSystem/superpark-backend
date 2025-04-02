@@ -1,4 +1,5 @@
 POSTGRES_DB=superpark
 POSTGRES_USERNAME=superpark
 POSTGRES_PASSWORD=superparkapi
+
 PORT=8080
