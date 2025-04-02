@@ -24,8 +24,12 @@ export async function create(email: string, password: string) {
             if (err.code == "23505") {
                 return { type: me.DuplError }
             } else {
+                console.log(err)
                 return { type: me.UnknownError }
             }
+        } else {
+            console.log(err)
+            return { type: me.UnknownError }
         }
     }
     return null

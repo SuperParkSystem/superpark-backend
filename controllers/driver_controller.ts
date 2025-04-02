@@ -20,7 +20,7 @@ export async function createPut(req : express.Request, res : express.Response) {
   console.log("Extracted email and password")
   let salted = await bcrypt.hash(password, DriverSaltRounds)
   let result = await driver.create(email, salted)
-  if (result === null || result === undefined) {
+  if (result === null || result === undefined || result.type === me.NoError) {
       res.status(201) // TODO: check code
       res.send({msg: "Success"})
   } else if (result.type === me.DuplError) {
