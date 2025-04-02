@@ -1,8 +1,8 @@
-import { describe, test, expect } from "bun:test";
+import { test, expect } from "bun:test";
 import db from "./models/connectionPool"
 
 
-const URL = process.env.BACKEND_URL || "http://localhost:3000"
+const URL = process.env.BACKEND_URL ?? "http://localhost:3000"
 
 await db.query("DELETE FROM driver_sessions")
 await db.query("DELETE FROM sessions")

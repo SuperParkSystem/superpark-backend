@@ -21,7 +21,7 @@ export async function createPut(req : express.Request, res : express.Response) {
   let salted = await bcrypt.hash(password, DriverSaltRounds)
   let result = await driver.create(email, salted)
   if (result === null || result === undefined || result.type === me.NoError) {
-      res.status(201) // TODO: check code
+      res.status(201)
       res.send({msg: "Success"})
   } else if (result.type === me.DuplError) {
       res.status(400)
@@ -161,33 +161,31 @@ export async function getBalanceGet(req: Request, res: Response) {
 }
 
 export async function getProfileGet(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
     }
-    var result = await driver.getProfile(email)
+    const result = await driver.getProfile(email)
     res.status(200)
     console.log(result)
     res.send({email: result.email, balance: result.balance})
-    return
-
 }
 
 export async function changePasswordPost(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
     }
-    var oldPass = req.body.oldPassword
-    var newPass = req.body.newPassword
+    const oldPass = req.body.oldPassword
+    const newPass = req.body.newPassword
     if (oldPass === undefined || newPass === undefined) {
         res.status(400)
         res.send({msg: "Missing params oldPassword or newPassword"})
         return
     }
-    var oldHashRes = await driver.fetchPass(email)
+    const oldHashRes = await driver.fetchPass(email)
     if (oldHashRes.type === me.NotExistError) {
         res.status(500).send({msg: "Driver does not exist"})
         return
@@ -208,7 +206,7 @@ export async function changePasswordPost(req: Request, res: Response) {
         return
     }
 
-    var result = await driver.changePassword(email, newPass)
+    const result = await driver.changePassword(email, newPass)
     if (result.type === me.NoError) {
         res.sendStatus(200)
     } else if (result.type === me.NotExistError) {
@@ -222,10 +220,10 @@ export async function changePasswordPost(req: Request, res: Response) {
 }
 
 export async function getSessions(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.status(500)
-        res.send({msg: 'Missing \"x-email\" header from middleware'})
+        res.send({msg: 'Missing "x-email" header from middleware'})
         return
     }
     const result = await driver.getActiveSession(email)
