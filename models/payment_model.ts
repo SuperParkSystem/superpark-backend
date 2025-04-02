@@ -1,4 +1,4 @@
-import pool from "../connectionPool"; // ✅ Correct database connection import
+import pool from "./connectionPool"; //  Correct database connection import
 import * as me from "../models/errors";
 
 export async function getPaymentStatus(email: string) {

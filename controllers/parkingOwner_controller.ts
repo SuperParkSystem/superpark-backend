@@ -288,3 +288,42 @@ export async function getDriverFeedbackGet(req: Request, res: Response) {
 
   res.status(200).send({ feedbacks: result.feedbacks });
 }
+
+export async function storeParkedLocation(req: Request, res: Response) {
+  const { driver_id, latitude, longitude } = req.body;
+
+  if (!driver_id || !latitude || !longitude) {
+      res.status(400).json({ message: "Missing required fields" });
+      return ;
+  }
+
+  const result = await parkingOwner.saveVehicleLocation(driver_id, latitude, longitude);
+
+  if (result.type === "NoError") {
+       res.status(200).json({ message: "Vehicle location stored successfully" });
+       return;
+  }
+
+  res.status(500).json({ message: "Error storing vehicle location" });
+  return ;
+}
+
+// Get the parked vehicle location
+export async function getParkedLocation(req: Request, res: Response) {
+  const driverId = parseInt(req.params.driverId, 10);
+
+  if (!driverId) {
+      res.status(400).json({ message: "Invalid Driver ID" });
+      return ;
+  }
+
+  const result = await parkingOwner.getVehicleLocation(driverId);
+
+  if (result.type === "NoError") {
+      res.status(200).json({ location: result.data });
+      return ;
+  }
+
+  res.status(500).json({ message: "Error fetching vehicle location" });
+  return ;
+}
