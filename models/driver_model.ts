@@ -8,8 +8,8 @@ function calcAmt(duration: number, rate: number, penaltyThresh: number | undefin
     // returns (total amt, penalty amt)
     // duration: in milliseconds
     // rate: per minute
-    penaltyThresh = penaltyThresh || 360
-    penaltyRate = penaltyRate || rate * 10
+    penaltyThresh = penaltyThresh ?? 360
+    penaltyRate = penaltyRate ?? rate * 10
     let minutes = duration/(60*1000)
     let normalAmt = minutes * rate
     let penaltyAmt: number = (minutes <= penaltyThresh) ? 0 : (minutes - penaltyThresh)*penaltyRate
@@ -37,7 +37,7 @@ export async function create(email: string, password: string) {
 
 export async function fetchPass(email: string) {
     try {
-        var result = await pool.query("SELECT password_hash FROM drivers WHERE email = $1;", [email])
+        const result = await pool.query("SELECT password_hash FROM drivers WHERE email = $1;", [email])
         if (result.rowCount === null) {
             return { type: me.NotExistError }
         }
@@ -59,7 +59,7 @@ export async function createToken(email: string, token: string) {
 
 export async function verifyToken(token: string) {
     try {
-        var result = await pool.query("SELECT email FROM driver_sessions WHERE session_key = $1;", [token])
+        const result = await pool.query("SELECT email FROM driver_sessions WHERE session_key = $1;", [token])
         if (result.rowCount == null || result.rowCount == 0) {
             return { type: me.NotExistError }
         }
@@ -74,17 +74,17 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
     const conn = await pool.connect()
     try {
         await conn.query("BEGIN")
-        var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time IS NULL AND driver_email = $1;", [driverEmail])
+        const otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time IS NULL AND driver_email = $1;", [driverEmail])
         if (otherSessions.rowCount != null && otherSessions.rowCount > 0) {
-            var po = await conn.query("SELECT session_id, lat, lon FROM sessions s, parking_owners po WHERE po.email = s.parking_owner_email AND email = $1;", [otherSessions.rows[0].parking_owner_email])
+            const po = await conn.query("SELECT session_id, lat, lon FROM sessions s, parking_owners po WHERE po.email = s.parking_owner_email AND email = $1;", [otherSessions.rows[0].parking_owner_email])
             return { type: me.DuplError, sessionID: po.rows[0].session_id, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: otherSessions.rows[0].start_time }
         }
-        var uuid = randomUUID().toString()
+        const uuid = randomUUID().toString()
         await conn.query("INSERT INTO sessions(session_id, driver_email, parking_owner_email, start_time) VALUES ($1, $2, $3, NOW());",
             [uuid, driverEmail, parkingOwnerEmail]
         )
-        var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [parkingOwnerEmail])
-        var st = await conn.query("SELECT start_time FROM sessions WHERE driver_email = $1 AND end_time IS NULL;", [driverEmail])
+        const po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [parkingOwnerEmail])
+        const st = await conn.query("SELECT start_time FROM sessions WHERE driver_email = $1 AND end_time IS NULL;", [driverEmail])
         console.log("start_time: ", st.rows[0])
         await conn.query("COMMIT")
         return { type: me.NoError, sessionID: uuid, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: st.rows[0].start_time }
@@ -126,7 +126,7 @@ export async function paySession(sessionID: string, driverEmail: string) {
     const conn = await pool.connect()
     try {
         await conn.query("BEGIN")
-        var res = await conn.query('SELECT end_time, start_time, parking_owner_email, po.payment_policy as pp FROM sessions s, parking_owners po\
+        let res = await conn.query('SELECT end_time, start_time, parking_owner_email, po.payment_policy as pp FROM sessions s, parking_owners po\
                                   WHERE session_id = $1 AND driver_email = $2 AND s.parking_owner_email = po.email;',
             [sessionID, driverEmail])
 
@@ -138,7 +138,7 @@ export async function paySession(sessionID: string, driverEmail: string) {
         // TODO: update with custom penalty rate and thresh
         const [amt, penaltyAmt] = calcAmt(res.rows[0].end_time - res.rows[0].start_time, res.rows[0].pp, undefined, undefined)
 
-        var res = await conn.query('UPDATE sessions SET payment_status = 1 WHERE \
+        res = await conn.query('UPDATE sessions SET payment_status = 1 WHERE \
                                    session_id = $1 AND payment_status = 0;',
             [sessionID])
         if (res.rowCount == null || res.rowCount == 0) {
@@ -146,7 +146,7 @@ export async function paySession(sessionID: string, driverEmail: string) {
             await conn.query('COMMIT')
             return {type: me.NoError, totalAmount: amt, penaltyAmount: penaltyAmt}
         }
-        var res = await conn.query('UPDATE drivers SET balance = balance - $1 WHERE \
+        res = await conn.query('UPDATE drivers SET balance = balance - $1 WHERE \
                                    email = $2;',
             [amt, driverEmail])
         await conn.query('UPDATE parking_owners SET balance = balance + $1 WHERE \
@@ -197,7 +197,7 @@ export async function getProfile(email: string) {
 }
 
 export async function changePassword(email: string, newPassHash: string) {
-    var res = await pool.query("UPDATE drivers SET password_hash = $1 WHERE email = $2;", [newPassHash, email])
+    const res = await pool.query("UPDATE drivers SET password_hash = $1 WHERE email = $2;", [newPassHash, email])
     if (res.rowCount == 0) {
         return { type: me.NotExistError }
     }
