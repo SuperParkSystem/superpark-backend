@@ -9,8 +9,8 @@ import * as me from "../models/errors.ts"
 const ParkingOwnerSaltRounds = 10
 
 export async function createPut(req: Request, res: Response) {
-  var email = req.body.email
-  var password = req.body.password
+  const email = req.body.email
+  const password = req.body.password
   if (email === undefined || password === undefined) {
     res.status(400)
     res.send({msg: "Missing fields"})
@@ -20,7 +20,7 @@ export async function createPut(req: Request, res: Response) {
   let salted = await bcrypt.hash(password, ParkingOwnerSaltRounds)
   let result = await parkingOwner.create(email, salted, undefined, undefined)
   if (result === null || result === undefined) {
-    res.status(201) // TODO: check code
+    res.status(201)
     res.send({msg: "Success"})
   } else if (result.type === me.DuplError) {
     res.status(400)
@@ -34,8 +34,8 @@ export async function createPut(req: Request, res: Response) {
 }
 
 export async function createTokenPost(req: Request, res: Response) {
-  var email = req.body.email
-  var password = req.body.password
+  const email = req.body.email
+  const password = req.body.password
   if (email === undefined || password === undefined) {
     res.status(400)
     res.send({msg: "Missing fields"})
@@ -75,7 +75,7 @@ export async function createTokenPost(req: Request, res: Response) {
 }
 
 export async function testToken(req: Request, res: Response) {
-  var email: string | undefined | string[] = req.headers['x-email']
+  const email: string | undefined | string[] = req.headers['x-email']
   res.status(200)
   res.send({ msg: "Token verified", email: email })
 }
@@ -105,7 +105,7 @@ export async function verifyPaymentGet(req: Request, res: Response) {
 }
 
 export async function getBalanceGet(req: Request, res: Response) {
-  var email = req.headers['x-email']?.toString()
+  const email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.sendStatus(500)
     return
@@ -113,11 +113,10 @@ export async function getBalanceGet(req: Request, res: Response) {
   const result = await parkingOwner.getBalance(email)
   res.status(200)
   res.send({ balance: result.balance })
-  return
 }
 
 export async function getPaymentPolicy(req: Request, res: Response) {
-  var email = req.headers['x-email']?.toString()
+  const email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.status(500)
     res.send({ msg: 'Internal server error (x-email missing)' })
@@ -132,27 +131,27 @@ export async function getPaymentPolicy(req: Request, res: Response) {
 }
 
 export async function postPaymentPolicy(req: Request, res: Response) {
-  var email = req.headers['x-email']?.toString()
+  const email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.status(500).send({ msg: 'Internal server error' })
     return
   }
   const pp: string | undefined = req.query['value']?.toString()
   if (pp === undefined) {
-    res.status(400).send({ msg: 'Query param \"value\" is missing' })
+    res.status(400).send({ msg: 'Query param "value" is missing' })
     return
   }
-  var ppNum = Number(pp)
+  const ppNum = Number(pp)
   if (isNaN(ppNum)) {
-    res.status(400).send({ msg: 'Query param \"value\" must be an integer' })
+    res.status(400).send({ msg: 'Query param "value" must be an integer' })
     return
   }
-  const result = await parkingOwner.setPaymentPolicy(email, Math.round(ppNum * 100) / 100)
+  await parkingOwner.setPaymentPolicy(email, Math.round(ppNum * 100) / 100)
   res.status(201).send({ msg: 'Updated' })
 }
 
 export async function getProfileGet(req: Request, res: Response) {
-  var email = req.headers['x-email']?.toString()
+  const email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.status(500).send({ msg: 'Internal server error' })
     return
@@ -168,22 +167,22 @@ export async function getProfileGet(req: Request, res: Response) {
 
 export async function setLocationPost(req: Request, res: Response) {
   console.log("Setting location")
-  var email = req.headers['x-email']?.toString()
+  const email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.status(500).send({ msg: 'Internal server error' })
     return
   }
   if (req.query['lat'] === undefined || req.query['lon'] === undefined) {
-    res.status(400).send({ msg: 'Query param \"lat\" or \"lon\" is missing' })
+    res.status(400).send({ msg: 'Query param "lat" or "lon" is missing' })
     return
   }
   const lat: number= parseFloat(req.query['lat']?.toString())
   const lon: number= parseFloat(req.query['lon']?.toString())
   if (lat === undefined || lon === undefined) {
-    res.status(400).send({ msg: 'Query param \"lat\" or \"lon\" is missing' })
+    res.status(400).send({ msg: 'Query param "lat" or "lon" is missing' })
     return
   }
-  const result = await parkingOwner.setLocation(email, lat, lon)
+  await parkingOwner.setLocation(email, lat, lon)
   res.status(201).send({ msg: 'Updated' })
 }
 
@@ -192,7 +191,7 @@ export async function setLocationPost(req: Request, res: Response) {
 // function to get status of payment for parking lot owner - product owner 
 
 export async function getPaymentStatus(req: Request, res: Response) {
-  var email = req.headers['x-email']?.toString();
+  const email = req.headers['x-email']?.toString();
   if (email === undefined) {
     res.status(500).send({ msg: 'Internal server error (x-email missing)' });
     return;

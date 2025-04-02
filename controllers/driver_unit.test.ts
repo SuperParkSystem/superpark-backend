@@ -3,7 +3,6 @@ import * as me from "../models/errors.ts";
 import * as bc from "bcrypt"
 
 import * as dc from "./driver_controller.ts"
-import { createToken } from "../models/driver_model.ts";
 
 mock.module("../models/driver_model.ts", () => {
     return {
@@ -52,34 +51,34 @@ function jestRes() {
 
 describe("driver signup", async () => {
     test("duplicate email", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "p" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
     test("missing fields", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "abc@x.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
     test("unknown error", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "error@mail.com", password: "124" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(500)
     })
     test("success", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "random@mail.com", password: "abcd" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
     })
@@ -87,38 +86,38 @@ describe("driver signup", async () => {
 
 describe("driver authentication", async () => {
     test("missing fields", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "abc@x.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
 
     test("incorrect password", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "wrongpassword" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(401)
     })
 
     test("unknown error", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "error@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(401)
         expect(mRes.send).toBeCalledWith({ msg: "Not authenticated or unknown error" })
     })
 
     test("success", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
         expect(mRes.send).toBeCalledWith(expect.objectContaining({ token: expect.any(String) }))
@@ -127,41 +126,41 @@ describe("driver authentication", async () => {
 
 describe("driver session management", async () => {
     test("start session - missing parkingOwner", async () => {
-        var mReq = {
+        const mReq = {
             headers: { "x-email": "driver@mail.com" },
             query: {}
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.startSessionPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
 
     test("start session - unknown error", async () => {
-        var mReq = {
+        const mReq = {
             headers: { "x-email": "driver@mail.com" },
             query: { parkingOwnerEmail: "unknownerror@mail.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.startSessionPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(501)
     })
 
     test("start session - duplicate session", async () => {
-        var mReq = {
+        const mReq = {
             headers: { "x-email": "driver@mail.com" },
             query: { parkingOwnerEmail: "duplicate@mail.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.startSessionPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
 
     test("start session - success", async () => {
-        var mReq = {
+        const mReq = {
             headers: { "x-email": "driver@mail.com" },
             query: { parkingOwnerEmail: "success@mail.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await dc.startSessionPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
         expect(mRes.send).toBeCalledWith(expect.objectContaining({ sessionID: expect.any(String), lat: expect.any(Number), lon: expect.any(Number), startTime: expect.any(String) }))

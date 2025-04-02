@@ -21,7 +21,7 @@ export async function createPut(req : express.Request, res : express.Response) {
   let salted = await bcrypt.hash(password, DriverSaltRounds)
   let result = await driver.create(email, salted)
   if (result === null || result === undefined || result.type === me.NoError) {
-      res.status(201) // TODO: check code
+      res.status(201)
       res.send({msg: "Success"})
   } else if (result.type === me.DuplError) {
       res.status(400)
@@ -170,8 +170,6 @@ export async function getProfileGet(req: Request, res: Response) {
     res.status(200)
     console.log(result)
     res.send({email: result.email, balance: result.balance})
-    return
-
 }
 
 export async function changePasswordPost(req: Request, res: Response) {
@@ -225,7 +223,7 @@ export async function getSessions(req: Request, res: Response) {
     const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.status(500)
-        res.send({msg: 'Missing \"x-email\" header from middleware'})
+        res.send({msg: 'Missing "x-email" header from middleware'})
         return
     }
     const result = await driver.getActiveSession(email)
