@@ -12,16 +12,23 @@ export async function createPut(req: Request, res: Response) {
   var email = req.body.email
   var password = req.body.password
   if (email === undefined || password === undefined) {
-    res.sendStatus(400)
+    res.status(400)
+    res.send({msg: "Missing fields"})
     return
   }
   console.log("Extracted email and password")
   let salted = await bcrypt.hash(password, ParkingOwnerSaltRounds)
   let result = await parkingOwner.create(email, salted, undefined, undefined)
   if (result === null || result === undefined) {
-    res.sendStatus(201) // TODO: check code
+    res.status(201) // TODO: check code
+    res.send({msg: "Success"})
+  } else if (result.type === me.DuplError) {
+    res.status(400)
+    res.send({msg: "Email exists"})
+    console.log("ERROR: ", result)
   } else {
-    res.sendStatus(400)
+    res.status(500)
+    res.send({msg: "Unknown error"})
     console.log("ERROR: ", result)
   }
 }
@@ -30,19 +37,20 @@ export async function createTokenPost(req: Request, res: Response) {
   var email = req.body.email
   var password = req.body.password
   if (email === undefined || password === undefined) {
-    res.sendStatus(400)
+    res.status(400)
+    res.send({msg: "Missing fields"})
     return
   }
   const passHash = await parkingOwner.fetchPass(email)
   console.log("Passhash: ", passHash)
   try {
-    if (! await bcrypt.compare(password, passHash)) {
-      res.sendStatus(401)
+    if (! await bcrypt.compare(password, passHash.passHash)) {
+      res.status(401)
       return
     }
   } catch (err: any) {
     console.log(err)
-    res.sendStatus(401)
+    res.status(401)
     return
   }
   const buf = Buffer.alloc(64)
@@ -74,7 +82,8 @@ export async function verifyPaymentGet(req: Request, res: Response) {
       res.send({ msg: 'Session does not exist' })
       return
     } else {
-      res.sendStatus(500)
+      res.status(500)
+      res.send({msg: "Unknown error"})
       return
     }
   }

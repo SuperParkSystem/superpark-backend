@@ -13,7 +13,7 @@ CREATE TABLE parking_owners (
     password_hash varchar(255) NOT NULL, 
     lat float,
     lon float,
-    payment_policy numeric(10, 2) NOT NULL DEFAULT,
+    payment_policy numeric(10, 2) NOT NULL DEFAULT 40,
     balance numeric(10, 2) NOT NULL DEFAULT 0
 );
 
