@@ -10,8 +10,8 @@ import { randomFillSync } from "crypto";
 const DriverSaltRounds = 10
 
 export async function createPut(req : express.Request, res : express.Response) {
-  var email = req.body.email
-  var password = req.body.password
+  const email = req.body.email
+  const password = req.body.password
   if (email === undefined || password === undefined) {
     res.status(400)
     res.send({msg: "Missing fields"})
@@ -20,10 +20,9 @@ export async function createPut(req : express.Request, res : express.Response) {
   console.log("Extracted email and password")
   let salted = await bcrypt.hash(password, DriverSaltRounds)
   let result = await driver.create(email, salted)
-  if (result === null || result === undefined) {
-      res.status(201) // TODO: check code
+  if (result === null || result === undefined || result.type === me.NoError) {
+      res.status(201)
       res.send({msg: "Success"})
-      return
   } else if (result.type === me.DuplError) {
       res.status(400)
       res.send({msg: "Email already exists"})
@@ -35,8 +34,8 @@ export async function createPut(req : express.Request, res : express.Response) {
 }
 
 export async function createTokenPost(req : express.Request, res : express.Response) {
-    var email = req.body.email
-    var password = req.body.password
+    const email = req.body.email
+    const password = req.body.password
     if (email === undefined || password === undefined) {
         res.status(400)
         res.send({msg: "Missing fields"})
@@ -76,14 +75,14 @@ export async function createTokenPost(req : express.Request, res : express.Respo
 }
 
 export async function testToken(req: Request, res: Response) {
-    var email : string | undefined | string[] = req.headers['x-email']
+    const email : string | undefined | string[] = req.headers['x-email']
     res.status(200)
     res.send({msg: "Token verified", email: email})
 }
 
 export async function startSessionPut(req: Request, res: Response) {
-    var email : string | undefined = req.headers['x-email']?.toString()
-    var parkingOwner : string | undefined = req.query.parkingOwnerEmail?.toString()
+    const email : string | undefined = req.headers['x-email']?.toString()
+    const parkingOwner : string | undefined = req.query.parkingOwnerEmail?.toString()
     if (email === undefined) {
         res.status(500)
         res.send({msg: "Missing email header"})
@@ -94,31 +93,29 @@ export async function startSessionPut(req: Request, res: Response) {
         res.send({msg: "Missing parkingOwnerEmail query param"})
         return
     }
-    var result = await driver.startSession(email, parkingOwner)
+    const result = await driver.startSession(email, parkingOwner)
     if (result.type == me.UnknownError) {
         res.status(501)
-        res.send({msg: "Unknown error"})
-        return
+        res.send({ msg: "Unknown error" })
     } else if (result.type === me.DuplError) {
         res.status(400)
-        res.send({msg: "Session exists", })
-        return
+        res.send({ msg: "Session exists", })
+    } else {
+        res.status(201)
+        res.send({ sessionID: result.sessionID, lat: result.lat, lon: result.lon, startTime: result.startTime })
     }
-    res.status(201)
-    res.send({sessionID: result.sessionID, lat: result.lat, lon: result.lon, startTime: result.startTime})
-    return 
 }
 
 
 export async function stopSessionPut(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
-    var parkingOwner = req.query.parkingOwnerEmail
-    var sessionID = req.body.sessionID
+    const email = req.headers['x-email']?.toString()
+    const parkingOwner = req.query.parkingOwnerEmail
+    const sessionID = req.body.sessionID
     if (parkingOwner === undefined || sessionID === undefined || email === undefined) {
         res.sendStatus(400)
         return
     }
-    var result = await driver.stopSession(sessionID, email, parkingOwner.toString())
+    const result = await driver.stopSession(sessionID, email, parkingOwner.toString())
     if (result.type === me.NoError) {
         res.status(200)
         res.send({duration: result.duration, totalAmount: result.totalAmount, penaltyAmount: result.penaltyAmount})
@@ -129,13 +126,13 @@ export async function stopSessionPut(req: Request, res: Response) {
 }
 
 export async function paySessionPost(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (req.body === undefined) {
         res.status(400)
         res.send({msg: 'Missing request body'})
         return
     }
-    var sessionID = req.body.sessionID.toString()
+    const sessionID = req.body.sessionID.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
@@ -147,15 +144,13 @@ export async function paySessionPost(req: Request, res: Response) {
     if (result.type === me.NoError) {
         res.status(200)
         res.send({totalAmount: result.totalAmount, penaltyAmount: result.penaltyAmount})
-        return
     } else {
         res.sendStatus(500)
-        return
     }
 }
 
 export async function getBalanceGet(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
@@ -163,37 +158,34 @@ export async function getBalanceGet(req: Request, res: Response) {
     const result = await driver.getBalance(email)
     res.status(200)
     res.send({balance: result.balance})
-    return
 }
 
 export async function getProfileGet(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
     }
-    var result = await driver.getProfile(email)
+    const result = await driver.getProfile(email)
     res.status(200)
     console.log(result)
     res.send({email: result.email, balance: result.balance})
-    return
-
 }
 
 export async function changePasswordPost(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.sendStatus(500)
         return
     }
-    var oldPass = req.body.oldPassword
-    var newPass = req.body.newPassword
+    const oldPass = req.body.oldPassword
+    const newPass = req.body.newPassword
     if (oldPass === undefined || newPass === undefined) {
         res.status(400)
         res.send({msg: "Missing params oldPassword or newPassword"})
         return
     }
-    var oldHashRes = await driver.fetchPass(email)
+    const oldHashRes = await driver.fetchPass(email)
     if (oldHashRes.type === me.NotExistError) {
         res.status(500).send({msg: "Driver does not exist"})
         return
@@ -214,7 +206,7 @@ export async function changePasswordPost(req: Request, res: Response) {
         return
     }
 
-    var result = await driver.changePassword(email, newPass)
+    const result = await driver.changePassword(email, newPass)
     if (result.type === me.NoError) {
         res.sendStatus(200)
     } else if (result.type === me.NotExistError) {
@@ -228,10 +220,10 @@ export async function changePasswordPost(req: Request, res: Response) {
 }
 
 export async function getSessions(req: Request, res: Response) {
-    var email = req.headers['x-email']?.toString()
+    const email = req.headers['x-email']?.toString()
     if (email === undefined) {
         res.status(500)
-        res.send({msg: 'Missing \"x-email\" header from middleware'})
+        res.send({msg: 'Missing "x-email" header from middleware'})
         return
     }
     const result = await driver.getActiveSession(email)

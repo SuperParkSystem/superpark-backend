@@ -11,10 +11,10 @@ router.use('/', auth.parkingOwnerAuth);
 router.post('/updateBalance', productOwner.addBalancePost);
 
 // New route to get all parking lot ratings
-router.get('/parkingLotRatings', productOwner.getParkingLotRatings);
+// router.get('/parkingLotRatings', productOwner.getParkingLotRatings);
 
 // New route to get parking lot ratings by owner email
-router.get('/parkingLotRatings/:ownerEmail', productOwner.getParkingLotRatingsByOwnerEmail);
+// router.get('/parkingLotRatings/:ownerEmail', productOwner.getParkingLotRatingsByOwnerEmail);
 
 router.get('/visualization/data', auth.driverAuth, productOwner.getVisualizationData as express.RequestHandler);
 

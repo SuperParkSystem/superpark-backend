@@ -7,8 +7,8 @@ import * as productOwner from "../models/productOwner_model";
 import * as me from "../models/errors";
 
 export async function createTokenPost(req: Request, res: Response) {
-  var email = req.body.email;
-  var password = req.body.password;
+  const email = req.body.email;
+  const password = req.body.password;
   if (email === undefined || password === undefined) {
     res.sendStatus(400);
     return;
@@ -34,7 +34,7 @@ export async function createTokenPost(req: Request, res: Response) {
 }
 
 export async function testToken(req: Request, res: Response) {
-  var email: string | undefined | string[] = req.headers["x-email"];
+  const email: string | undefined | string[] = req.headers["x-email"];
   if (email === undefined) {
     res.sendStatus(401);
     return;
@@ -45,14 +45,14 @@ export async function testToken(req: Request, res: Response) {
 
 export async function addBalancePost(req: Request, res: Response) {
   // Add balance to a driver
-  var email = req.headers["x-email"];
-  var amount = req.body.amount;
+  const email = req.headers["x-email"];
+  const amount = req.body.amount;
   if (email === undefined || amount === undefined) {
     res.status(400);
     res.send({ msg: "Missing email or amount" });
     return;
   }
-  var result = await productOwner.increaseBalance(email.toString(), amount);
+  const result = await productOwner.increaseBalance(email.toString(), amount);
   if (result.type === me.NoError) {
     res.status(200);
     res.send({ msg: "Updated balance" });
@@ -165,6 +165,3 @@ export const getNotifications = async (req: Request, res: Response) => {
       res.status(500).send({ message: "Server error" });
   }
 };
-
-// Add this route to your router file
-// router.get('/notifications', auth.driverAuth, productOwner.getNotifications);

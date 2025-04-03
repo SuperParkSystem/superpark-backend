@@ -5,7 +5,7 @@ import * as me from "./errors"
 export async function create(email: string, password: string,
   lat: number | undefined, lon: number | undefined) {
   try {
-    await pool.query("INSERT INTO parking_owners (email, password_hash, lat, lon) VALUES ($1, $2, $3, $4);", [email, password, lat || null, lon || null])
+    await pool.query("INSERT INTO parking_owners (email, password_hash, lat, lon) VALUES ($1, $2, $3, $4);", [email, password, lat ?? null, lon ?? null])
   } catch (err: any) {
     if (err instanceof DatabaseError) {
       if (err.code == "23505") {
@@ -20,7 +20,7 @@ export async function create(email: string, password: string,
 
 export async function fetchPass(email: string) {
   try {
-    var result = await pool.query("SELECT password_hash FROM parking_owners WHERE email = $1;", [email])
+    const result = await pool.query("SELECT password_hash FROM parking_owners WHERE email = $1;", [email])
     if (result.rowCount === null) {
       return { type: me.NotExistError }
     }
@@ -56,7 +56,7 @@ export async function setLocation(email: string, lat: number, lon: number) {
 
 export async function fetchProfile(email: string) {
   try {
-    var result = await pool.query("SELECT email, lat, lon, payment_policy, balance FROM parking_owners WHERE email = $1;", [email])
+    const result = await pool.query("SELECT email, lat, lon, payment_policy, balance FROM parking_owners WHERE email = $1;", [email])
     if (result.rowCount === null || result.rowCount < 1) {
       return { type: me.NotExistError }
     }
@@ -78,7 +78,7 @@ export async function createToken(email: string, token: string) {
 
 export async function verifyToken(token: string) {
   try {
-    var result = await pool.query("SELECT email FROM parking_owners_sessions WHERE session_key = $1;", [token])
+    const result = await pool.query("SELECT email FROM parking_owners_sessions WHERE session_key = $1;", [token])
     if (result.rowCount == null || result.rowCount == 0) {
       return { type: me.NotExistError }
     }
@@ -92,12 +92,12 @@ export async function verifyToken(token: string) {
 export async function verifyPaymentStatus(sessionID: string) {
   try {
     console.log(sessionID)
-    var result = await pool.query("SELECT payment_status FROM sessions WHERE session_id = $1;", [sessionID])
+    const result = await pool.query("SELECT payment_status FROM sessions WHERE session_id = $1;", [sessionID])
     console.log(result.rows)
     if (result.rows.length == 0) {
       return { type: me.NotExistError }
     }
-    var verified = (result.rows[0].payment_status == 1)
+    const verified = (result.rows[0].payment_status == 1)
     return { type: me.NoError, verified: verified }
   } catch (err: any) {
     console.log(err)

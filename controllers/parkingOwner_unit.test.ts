@@ -3,7 +3,6 @@ import * as me from "../models/errors.ts";
 import * as bc from "bcrypt"
 
 import * as pc from "./parkingOwner_controller.ts"
-import { createToken } from "../models/driver_model.ts";
 
 mock.module("../models/parkingOwner_model.ts", () => {
     return {
@@ -46,40 +45,40 @@ function jestRes() {
 
 describe("parking owner sign up", async () => {
     test("missing fields", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "abc@x.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
         expect(mRes.send).toBeCalledWith({ msg: "Missing fields" })
     })
 
     test("duplicate email", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
         expect(mRes.send).toBeCalledWith({ msg: "Email exists" })
     })
 
     test("unknown error", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "error@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(500)
         expect(mRes.send).toBeCalledWith({ msg: "Unknown error" })
     })
 
     test("success", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "new@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
         expect(mRes.send).toBeCalledWith({ msg: "Success" })
@@ -88,37 +87,37 @@ describe("parking owner sign up", async () => {
 
 describe("parking owner login", async () => {
     test("missing fields", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "abc@x.com" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
 
     test("incorrect password", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "wrongpassword" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(401)
     })
 
     test("unknown error", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "error@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(500)
     })
 
     test("success", async () => {
-        var mReq = {
+        const mReq = {
             body: { email: "existing@mail.com", password: "password" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
         expect(mRes.send).toBeCalledWith(expect.objectContaining({ token: expect.any(String) }))
@@ -127,40 +126,40 @@ describe("parking owner login", async () => {
 
 describe("parking owner verify payment", async () => {
     test("missing sessionID", async () => {
-        var mReq = {
+        const mReq = {
             query: {}
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.verifyPaymentGet(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
         expect(mRes.send).toBeCalledWith({ msg: 'Missing sessionID' })
     })
 
     test("session does not exist", async () => {
-        var mReq = {
+        const mReq = {
             query: { sessionID: "notexist" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.verifyPaymentGet(mReq, mRes)
         expect(mRes.status).toBeCalledWith(404)
         expect(mRes.send).toBeCalledWith({ msg: 'Session does not exist' })
     })
 
     test("unknown error", async () => {
-        var mReq = {
+        const mReq = {
             query: { sessionID: "unknownerror" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.verifyPaymentGet(mReq, mRes)
         expect(mRes.status).toBeCalledWith(500)
         expect(mRes.send).toBeCalledWith({ msg: 'Unknown error' })
     })
 
     test("success", async () => {
-        var mReq = {
+        const mReq = {
             query: { sessionID: "validsession" }
         }
-        var mRes = jestRes()
+        const mRes = jestRes()
         await pc.verifyPaymentGet(mReq, mRes)
         expect(mRes.status).toBeCalledWith(200)
         expect(mRes.send).toBeCalledWith({ verified: true })
