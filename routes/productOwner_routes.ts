@@ -16,6 +16,11 @@ router.post('/updateBalance', productOwner.addBalancePost);
 // New route to get parking lot ratings by owner email
 // router.get('/parkingLotRatings/:ownerEmail', productOwner.getParkingLotRatingsByOwnerEmail);
 
+router.get('/visualization/data', auth.driverAuth, productOwner.getVisualizationData as express.RequestHandler);
+
+router.get('/notifications', auth.driverAuth, productOwner.getNotifications);
+
+
 export default router;
 
 /**@openapi

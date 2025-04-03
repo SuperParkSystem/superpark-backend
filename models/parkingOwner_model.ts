@@ -257,3 +257,39 @@ export async function getDriverFeedback(parkingOwnerEmail: string) {
       return { type: me.UnknownError };
   }
 }
+
+export async function saveVehicleLocation(driverId: number, latitude: number, longitude: number) {
+  try {
+      const query = `
+          UPDATE drivers
+          SET parked_latitude = $1, parked_longitude = $2
+          WHERE id = $3
+      `;
+      await pool.query(query, [latitude, longitude, driverId]);
+
+      return { type: me.NoError };
+  } catch (err) {
+      return { type: me.UnknownError };
+  }
+}
+
+// Get the last parked vehicle location
+export async function getVehicleLocation(driverId: number) {
+  try {
+      const query = `
+          SELECT parked_latitude, parked_longitude
+          FROM drivers
+          WHERE id = $1
+      `;
+      const result = await pool.query(query, [driverId]);
+
+      if (result.rows.length === 0) {
+          return { type: me.NotExistError, message: "Driver not found" };
+      }
+
+      return { type: me.NoError, data: result.rows[0] };
+  } catch (err) {
+      return { type: me.UnknownError };
+  }
+}
+

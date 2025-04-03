@@ -20,6 +20,10 @@ router.post('/password', driver.changePasswordPost)
 
 router.get('/', driver.getProfileGet)
 
+router.get('/parking/rates', driver.getRates)
+
+router.get('/get-location/:driverId', driver.getParkedLocation);
+
 export default router;
 
 /**

@@ -203,3 +203,195 @@ export async function changePassword(email: string, newPassHash: string) {
     }
     return { type: me.NoError }
 }
+//_____________________amruta______________
+export async function insertFeedback(
+    driverEmail: string,
+    parkingOwnerEmail: string,
+    feedback: string | null,
+    rating: number,
+    status: string = 'pending' // Default status is 'pending'
+  ) {
+    try {
+      await pool.query(
+        `INSERT INTO driver_feedback (driver_email, parking_owner_email, feedback, rating, status)
+         VALUES ($1, $2, $3, $4, $5);`,
+        [driverEmail, parkingOwnerEmail, feedback, rating, status]
+      );
+      return { type: me.NoError };
+    } catch (err: any) {
+      if (err instanceof DatabaseError) {
+        if (err.code === "23505") {
+          return { type: me.DuplError }; // Duplicate feedback entry
+        } else {
+          return { type: me.UnknownError };
+        }
+      }
+      console.error("Error inserting feedback:", err);
+      return { type: me.UnknownError };
+    }
+  }
+  //_____________________ramaswetha__________________
+  //fetchRecommendedParking 
+
+  export async function fetchRecommendedParking(driverLat?: number, driverLon?: number, radiusKm?: number) {
+    try {
+        let query: string;
+        let params: any[]; // Explicitly define the type as any[]
+
+        if (driverLat !== undefined && driverLon !== undefined && radiusKm !== undefined) {
+            // Query with distance filter
+            query = `
+                SELECT email, lat, lon, payment_policy AS price,
+                      (6371 * acos(cos(radians($1)) * cos(radians(lat)) 
+                      * cos(radians(lon) - radians($2)) 
+                      + sin(radians($1)) * sin(radians(lat)))) AS distance
+                FROM parking_owners
+                WHERE payment_policy IS NOT NULL
+                HAVING distance <= $3
+                ORDER BY price ASC, distance ASC;
+            `;
+            params = [driverLat, driverLon, radiusKm];
+        } else {
+            // Basic query (no distance filter)
+            query = `
+                SELECT email, lat, lon, payment_policy AS price
+                FROM parking_owners
+                WHERE payment_policy IS NOT NULL
+                ORDER BY payment_policy ASC;
+            `;
+            params = []; // Explicitly set as an empty array
+        }
+
+        const result = await pool.query(query, params);
+
+        if (result.rowCount === 0) {
+            return { type: me.NotExistError };
+        }
+
+        return {
+            type: me.NoError,
+            parkingLots: result.rows.map((row) => ({
+                email: row.email,
+                latitude: row.lat,
+                longitude: row.lon,
+                price: row.price,
+                distance: row.distance || null, // Only available in distance query
+            })),
+        };
+
+    } catch (err: any) {
+        if (err instanceof DatabaseError) {
+            return { type: me.DbError };
+        }
+        console.error("Database error:", err);
+        return { type: me.UnknownError };
+    }
+}
+
+
+export async function getNearbyParkingLots(lat: number, lon: number) {
+    const query = `
+        SELECT email, lat, lon, payment_policy,
+               ( 6371 * acos(cos(radians($1)) * cos(radians(lat)) * 
+               cos(radians(lon) - radians($2)) + sin(radians($1)) * 
+               sin(radians(lat))) ) AS distance
+        FROM parking_owners
+        ORDER BY payment_policy ASC, distance ASC
+        LIMIT 10;
+    `;
+
+    try {
+        const result = await pool.query(query, [lat, lon]);
+        return { type: "NoError", parkingLots: result.rows };
+    } catch (error) {
+        console.error("Error fetching parking lots:", error);
+        return { type: "DatabaseError", msg: "Failed to fetch parking lots" };
+    }
+}
+
+
+//threshold
+
+export async function updateThreshold(parkingOwnerEmail: string, newThreshold: number) {
+    const query = `
+        UPDATE parkingslot
+        SET threshold = $1
+        WHERE parking_owner_email = $2
+        RETURNING *;
+    `;
+
+    try {
+        const result = await pool.query(query, [newThreshold, parkingOwnerEmail]);
+        return { type: "NoError", updatedThreshold: result.rows[0] };
+    } catch (error) {
+        console.error("Error updating threshold:", error);
+        return { type: "DatabaseError", msg: "Failed to update threshold" };
+    }
+}
+
+export async function checkThreshold(parkingOwnerEmail: string) {
+    const query = `
+        SELECT total_spaces, occupied_spaces, threshold
+        FROM parkingslot
+        WHERE parking_owner_email = $1;
+    `;
+
+    try {
+        const result = await pool.query(query, [parkingOwnerEmail]);
+        if (result.rows.length === 0) return { type: "NotExistError" };
+
+        const { total_spaces, occupied_spaces, threshold } = result.rows[0];
+        const occupancyRate = (occupied_spaces / total_spaces) * 100;
+
+        if (occupancyRate >= threshold) {
+            return { type: "ThresholdReached", msg: "Parking lot is almost full!" };
+        }
+
+        return { type: "NoError", msg: "Parking lot has available space." };
+    } catch (error) {
+        console.error("Error checking threshold:", error);
+        return { type: "DatabaseError", msg: "Failed to check threshold" };
+    }
+}
+
+//nearby parking slots
+
+export const getNearbyParkingRates = async (driverLat: number, driverLon: number, maxDistance: number) => {
+    const query = `
+        SELECT po.email AS parking_owner_email, 
+               po.lat AS parking_owner_lat, 
+               po.lon AS parking_owner_lon,
+               po.payment_policy AS rate,
+               ( 6371 * acos( cos( radians($1) ) * cos( radians( po.lat ) ) * cos( radians( po.lon ) - radians($2) ) + sin( radians($1) ) * sin( radians( po.lat ) ) ) ) AS distance_km
+        FROM parking_owners po
+        WHERE ( 6371 * acos( cos( radians($1) ) * cos( radians( po.lat ) ) * cos( radians( po.lon ) - radians($2) ) + sin( radians($1) ) * sin( radians( po.lat ) ) ) ) ) <= $3
+        ORDER BY distance_km;
+    `;
+    const values = [driverLat, driverLon, maxDistance];
+    
+    const result = await pool.query(query, values);
+    return result.rows;
+};
+
+//get parking lot location
+
+
+// Get the last parked vehicle location
+export async function getVehicleLocation(driverId: number) {
+    try {
+        const query = `
+            SELECT parked_latitude, parked_longitude
+            FROM drivers
+            WHERE id = $1
+        `;
+        const result = await pool.query(query, [driverId]);
+
+        if (result.rows.length === 0) {
+            return { type: me.NotExistError, message: "Driver not found" };
+        }
+
+        return { type: me.NoError, data: result.rows[0] };
+    } catch (err) {
+        return { type: me.UnknownError };
+    }
+}

@@ -19,6 +19,10 @@ router.post('/location', parkingOwner.setLocationPost)
 
 router.get('/', parkingOwner.getProfileGet)
 
+router.post('/store-location', parkingOwner.storeParkedLocation);
+
+router.get('/get-location/:driverId', parkingOwner.getParkedLocation);
+
 export default router
 
 /**@openapi

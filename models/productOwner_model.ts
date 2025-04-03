@@ -122,3 +122,180 @@ export async function getParkingLotRatingsByOwnerEmail(ownerEmail: string) {
     return { type: me.DbError };
   }
 }
+
+
+//visualisation
+
+export const getOccupancyData = async (timeRange: string) => {
+  let timeFilter = '';
+  
+  if (timeRange === 'weekly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'7 days\'';
+  } else if (timeRange === 'monthly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'30 days\'';
+  } else if (timeRange === 'yearly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'1 year\'';
+  }
+  
+  const query = `
+      SELECT 
+          DATE_TRUNC('day', s.start_time) AS date,
+          COUNT(s.session_id) AS total_sessions,
+          COUNT(CASE WHEN s.end_time IS NULL THEN 1 END) AS active_sessions
+      FROM 
+          sessions s
+      WHERE 
+          s.start_time IS NOT NULL
+          ${timeFilter}
+      GROUP BY 
+          DATE_TRUNC('day', s.start_time)
+      ORDER BY 
+          date;
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+export const getRevenueData = async (timeRange: string) => {
+  let timeGrouping = 'day';
+  let timeFilter = '';
+  
+  if (timeRange === 'weekly') {
+      timeFilter = 'AND payment_time >= NOW() - INTERVAL \'7 days\'';
+  } else if (timeRange === 'monthly') {
+      timeFilter = 'AND payment_time >= NOW() - INTERVAL \'30 days\'';
+      timeGrouping = 'week';
+  } else if (timeRange === 'yearly') {
+      timeFilter = 'AND payment_time >= NOW() - INTERVAL \'1 year\'';
+      timeGrouping = 'month';
+  }
+  
+  const query = `
+      SELECT 
+          DATE_TRUNC('${timeGrouping}', payment_time) AS period,
+          SUM(amount) AS total_revenue,
+          COUNT(payment_id) AS payment_count
+      FROM 
+          payments
+      WHERE 
+          payment_time IS NOT NULL
+          ${timeFilter}
+      GROUP BY 
+          DATE_TRUNC('${timeGrouping}', payment_time)
+      ORDER BY 
+          period;
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+export const getThresholdAnalysisData = async () => {
+  const query = `
+      SELECT 
+          p.email AS owner_email,
+          p.threshold AS set_threshold,
+          COUNT(s.session_id) AS current_occupancy,
+          ROUND((COUNT(s.session_id)::numeric / p.threshold::numeric) * 100, 2) AS occupancy_percentage
+      FROM 
+          parking_owners p
+      LEFT JOIN 
+          sessions s ON p.email = s.parking_owner_email AND s.end_time IS NULL
+      GROUP BY 
+          p.email, p.threshold
+      ORDER BY 
+          occupancy_percentage DESC;
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+export const getPeakHoursData = async (timeRange: string) => {
+  let timeFilter = '';
+  
+  if (timeRange === 'weekly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'7 days\'';
+  } else if (timeRange === 'monthly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'30 days\'';
+  } else if (timeRange === 'yearly') {
+      timeFilter = 'AND s.start_time >= NOW() - INTERVAL \'1 year\'';
+  }
+  
+  const query = `
+      SELECT 
+          EXTRACT(HOUR FROM s.start_time) AS hour_of_day,
+          COUNT(s.session_id) AS session_count
+      FROM 
+          sessions s
+      WHERE 
+          s.start_time IS NOT NULL
+          ${timeFilter}
+      GROUP BY 
+          EXTRACT(HOUR FROM s.start_time)
+      ORDER BY 
+          hour_of_day;
+  `;
+  
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+//threshhold
+
+// In your model file (e.g., driver_model.ts)
+export const sendThresholdNotification = async (ownerEmail: string, occupiedSlots: number) => {
+  try {
+      // Store notification in database for persistence
+      const query = `
+          INSERT INTO notifications (recipient_email, notification_type, message, is_read, created_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          RETURNING notification_id;
+      `;
+      
+      const message = `Threshold Alert: ${occupiedSlots} parking slots are currently occupied, which has reached or exceeded your set threshold.`;
+      
+      const result = await pool.query(query, [
+          ownerEmail, 
+          'THRESHOLD_ALERT',
+          message,
+          false
+      ]);
+      
+      // You could implement real-time notification here with WebSockets if needed
+      return {
+          success: true,
+          notification_id: result.rows[0].notification_id
+      };
+  } catch (error) {
+      console.error("Error sending notification:", error);
+      return {
+          success: false,
+          error: "Failed to send notification"
+      };
+  }
+};
+
+// Add a function to retrieve notifications
+export const getNotifications = async (email: string) => {
+  try {
+      const query = `
+          SELECT notification_id, notification_type, message, is_read, created_at
+          FROM notifications
+          WHERE recipient_email = $1
+          ORDER BY created_at DESC;
+      `;
+      
+      const result = await pool.query(query, [email]);
+      return result.rows;
+  } catch (error) {
+      console.error("Error fetching notifications:", error);
+      throw error;
+  }
+};
+
+//store driver location
+
+
+// Save the parked vehicle location
