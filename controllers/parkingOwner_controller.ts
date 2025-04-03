@@ -41,16 +41,29 @@ export async function createTokenPost(req: Request, res: Response) {
     res.send({msg: "Missing fields"})
     return
   }
-  const passHash = await parkingOwner.fetchPass(email)
-  console.log("Passhash: ", passHash)
+  const passHashRes = await parkingOwner.fetchPass(email)
+  if (passHashRes.type != me.NoError) {
+    if (passHashRes.type == me.UnknownError) {
+      res.status(500)
+      res.send({msg: "Unknown error"})
+      return
+    } else {
+      res.status(400)
+      res.send({ msg: "Not authenticated or unknown error" })
+      return
+    }
+  }
+  const passHash = passHashRes.passHash
   try {
-    if (! await bcrypt.compare(password, passHash.passHash)) {
+    if (! await bcrypt.compare(password, passHash)) {
       res.status(401)
+      res.send({msg: "Incorrect password"})
       return
     }
   } catch (err: any) {
     console.log(err)
-    res.status(401)
+    res.status(500)
+    res.send({msg: "Internal error"})
     return
   }
   const buf = Buffer.alloc(64)
@@ -154,6 +167,7 @@ export async function getProfileGet(req: Request, res: Response) {
 }
 
 export async function setLocationPost(req: Request, res: Response) {
+  console.log("Setting location")
   var email = req.headers['x-email']?.toString()
   if (email === undefined) {
     res.status(500).send({ msg: 'Internal server error' })

@@ -30,7 +30,7 @@ export async function fetchPass(email: string) {
     console.log("result rows: ")
     console.log(result.rows)
     console.log("done")
-    return result.rows[0].password_hash
+    return { type: me.NoError, passHash: result.rows[0].password_hash}
   } catch (err: any) {
     return { type: me.UnknownError }
   }

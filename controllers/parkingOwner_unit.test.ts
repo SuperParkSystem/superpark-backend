@@ -2,9 +2,10 @@ import { expect, test, mock, describe, jest } from "bun:test"
 import * as me from "../models/errors.ts";
 import * as bc from "bcrypt"
 
-import * as dc from "./driver_controller.ts"
+import * as pc from "./parkingOwner_controller.ts"
+import { createToken } from "../models/driver_model.ts";
 
-mock.module("../models/driver_model.ts", () => {
+mock.module("../models/parkingOwner_model.ts", () => {
     return {
         create: async (email: string, password: string) => {
             if (email == "existing@mail.com") {
@@ -24,71 +25,74 @@ mock.module("../models/driver_model.ts", () => {
                 return {type: me.NotExistError}
             }
         },
-        startSession: async (driverEmail: string, parkingOwnerEmail: string) => {
-            if (parkingOwnerEmail == "unknownerror@mail.com") {
-                return { type: me.UnknownError }
-            } else if (parkingOwnerEmail == "duplicate@mail.com") {
-                return { type: me.DuplError }
-            } else {
-                return { type: me.NoError, sessionID: "session123", lat: 40.7128, lon: -74.0060, startTime: new Date().toISOString() }
-            }
+        createToken: async (email: string, token: string) => {
         },
-        stopSession: async (sessionID: string) => {
+        verifyPaymentStatus: async (sessionID: string) => {
             if (sessionID == "unknownerror") {
                 return { type: me.UnknownError }
+            } else if (sessionID == "notexist") {
+                return { type: me.NotExistError }
             } else {
-                return { type: me.NoError }
+                return { type: me.NoError, verified: true }
             }
         }
     }
 })
 
 function jestRes() {
-    return { send: jest.fn(), status: jest.fn(), sendStatus: jest.fn() }
+    return { send: jest.fn(), status: jest.fn() }
 }
 
-describe("driver signup", async () => {
-    test("duplicate email", async () => {
-        var mReq = {
-            body: { email: "existing@mail.com", password: "p" }
-        }
-        var mRes = jestRes()
-        await dc.createPut(mReq, mRes)
-        expect(mRes.status).toBeCalledWith(400)
-    })
+
+describe("parking owner sign up", async () => {
     test("missing fields", async () => {
         var mReq = {
             body: { email: "abc@x.com" }
         }
         var mRes = jestRes()
-        await dc.createPut(mReq, mRes)
+        await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
+        expect(mRes.send).toBeCalledWith({ msg: "Missing fields" })
     })
+
+    test("duplicate email", async () => {
+        var mReq = {
+            body: { email: "existing@mail.com", password: "password" }
+        }
+        var mRes = jestRes()
+        await pc.createPut(mReq, mRes)
+        expect(mRes.status).toBeCalledWith(400)
+        expect(mRes.send).toBeCalledWith({ msg: "Email exists" })
+    })
+
     test("unknown error", async () => {
         var mReq = {
-            body: { email: "error@mail.com", password: "124" }
+            body: { email: "error@mail.com", password: "password" }
         }
         var mRes = jestRes()
-        await dc.createPut(mReq, mRes)
+        await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(500)
+        expect(mRes.send).toBeCalledWith({ msg: "Unknown error" })
     })
+
     test("success", async () => {
         var mReq = {
-            body: { email: "random@mail.com", password: "abcd" }
+            body: { email: "new@mail.com", password: "password" }
         }
         var mRes = jestRes()
-        await dc.createPut(mReq, mRes)
+        await pc.createPut(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
+        expect(mRes.send).toBeCalledWith({ msg: "Success" })
     })
 })
 
-describe("driver authentication", async () => {
+describe("parking owner login", async () => {
     test("missing fields", async () => {
         var mReq = {
             body: { email: "abc@x.com" }
         }
         var mRes = jestRes()
-        await dc.createTokenPost(mReq, mRes)
+        await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
     })
 
@@ -97,7 +101,7 @@ describe("driver authentication", async () => {
             body: { email: "existing@mail.com", password: "wrongpassword" }
         }
         var mRes = jestRes()
-        await dc.createTokenPost(mReq, mRes)
+        await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(401)
     })
 
@@ -106,9 +110,8 @@ describe("driver authentication", async () => {
             body: { email: "error@mail.com", password: "password" }
         }
         var mRes = jestRes()
-        await dc.createTokenPost(mReq, mRes)
-        expect(mRes.status).toBeCalledWith(401)
-        expect(mRes.send).toBeCalledWith({ msg: "Not authenticated or unknown error" })
+        await pc.createTokenPost(mReq, mRes)
+        expect(mRes.status).toBeCalledWith(500)
     })
 
     test("success", async () => {
@@ -116,53 +119,50 @@ describe("driver authentication", async () => {
             body: { email: "existing@mail.com", password: "password" }
         }
         var mRes = jestRes()
-        await dc.createTokenPost(mReq, mRes)
+        await pc.createTokenPost(mReq, mRes)
         expect(mRes.status).toBeCalledWith(201)
         expect(mRes.send).toBeCalledWith(expect.objectContaining({ token: expect.any(String) }))
     })
 })
 
-describe("driver session management", async () => {
-    test("start session - missing parkingOwner", async () => {
+describe("parking owner verify payment", async () => {
+    test("missing sessionID", async () => {
         var mReq = {
-            headers: { "x-email": "driver@mail.com" },
             query: {}
         }
         var mRes = jestRes()
-        await dc.startSessionPut(mReq, mRes)
+        await pc.verifyPaymentGet(mReq, mRes)
         expect(mRes.status).toBeCalledWith(400)
+        expect(mRes.send).toBeCalledWith({ msg: 'Missing sessionID' })
     })
 
-    test("start session - unknown error", async () => {
+    test("session does not exist", async () => {
         var mReq = {
-            headers: { "x-email": "driver@mail.com" },
-            query: { parkingOwnerEmail: "unknownerror@mail.com" }
+            query: { sessionID: "notexist" }
         }
         var mRes = jestRes()
-        await dc.startSessionPut(mReq, mRes)
-        expect(mRes.status).toBeCalledWith(501)
+        await pc.verifyPaymentGet(mReq, mRes)
+        expect(mRes.status).toBeCalledWith(404)
+        expect(mRes.send).toBeCalledWith({ msg: 'Session does not exist' })
     })
 
-    test("start session - duplicate session", async () => {
+    test("unknown error", async () => {
         var mReq = {
-            headers: { "x-email": "driver@mail.com" },
-            query: { parkingOwnerEmail: "duplicate@mail.com" }
+            query: { sessionID: "unknownerror" }
         }
         var mRes = jestRes()
-        await dc.startSessionPut(mReq, mRes)
-        expect(mRes.status).toBeCalledWith(400)
+        await pc.verifyPaymentGet(mReq, mRes)
+        expect(mRes.status).toBeCalledWith(500)
+        expect(mRes.send).toBeCalledWith({ msg: 'Unknown error' })
     })
 
-    test("start session - success", async () => {
+    test("success", async () => {
         var mReq = {
-            headers: { "x-email": "driver@mail.com" },
-            query: { parkingOwnerEmail: "success@mail.com" }
+            query: { sessionID: "validsession" }
         }
         var mRes = jestRes()
-        await dc.startSessionPut(mReq, mRes)
-        expect(mRes.status).toBeCalledWith(201)
-        expect(mRes.send).toBeCalledWith(expect.objectContaining({ sessionID: expect.any(String), lat: expect.any(Number), lon: expect.any(Number), startTime: expect.any(String) }))
+        await pc.verifyPaymentGet(mReq, mRes)
+        expect(mRes.status).toBeCalledWith(200)
+        expect(mRes.send).toBeCalledWith({ verified: true })
     })
 })
-
-

@@ -23,3 +23,11 @@ services:
       - PORT=80
       - POSTGRES_HOST=db
     entrypoint: "bun run dev"
+  integ_test:
+    build:
+      context: ../../
+      dockerfile: ./Dockerfile
+    environment:
+      - BACKEND_URL=http://api:80
+      - POSTGRES_HOST=db
+    entrypoint: "bun test integ"

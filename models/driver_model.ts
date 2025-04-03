@@ -70,9 +70,9 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
     const conn = await pool.connect()
     try {
         await conn.query("BEGIN")
-        var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time = NULL AND driver_email = $1;", [driverEmail])
+        var otherSessions = await conn.query("SELECT * FROM sessions WHERE end_time IS NULL AND driver_email = $1;", [driverEmail])
         if (otherSessions.rowCount != null && otherSessions.rowCount > 0) {
-            var po = await conn.query("SELECT session_id, lat, lon FROM parking_owners WHERE email = $1;", [otherSessions.rows[0].parking_owner_email])
+            var po = await conn.query("SELECT session_id, lat, lon FROM sessions s, parking_owners po WHERE po.email = s.parking_owner_email AND email = $1;", [otherSessions.rows[0].parking_owner_email])
             return { type: me.DuplError, sessionID: po.rows[0].session_id, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: otherSessions.rows[0].start_time }
         }
         var uuid = randomUUID().toString()
@@ -80,8 +80,10 @@ export async function startSession(driverEmail: string, parkingOwnerEmail: strin
             [uuid, driverEmail, parkingOwnerEmail]
         )
         var po = await conn.query("SELECT lat, lon FROM parking_owners WHERE email = $1;", [parkingOwnerEmail])
+        var st = await conn.query("SELECT start_time FROM sessions WHERE driver_email = $1 AND end_time IS NULL;", [driverEmail])
+        console.log("start_time: ", st.rows[0])
         await conn.query("COMMIT")
-        return { type: me.NoError, sessionID: uuid, lat: po.rows[0].lat, lon: po.rows[0].lon }
+        return { type: me.NoError, sessionID: uuid, lat: po.rows[0].lat, lon: po.rows[0].lon, startTime: st.rows[0].start_time }
     } catch (err) {
         conn.query('ROLLBACK')
         console.log(err)
